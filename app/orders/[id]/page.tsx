@@ -163,8 +163,8 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 <span>المنتجات ({order.items?.length ?? 0})</span>
               </div>
               <ul className="space-y-1.5 text-sm">
-                {(order.items ?? []).map((it) => (
-                  <li key={it.id} className="flex items-center justify-between gap-3">
+                {(order.items ?? []).map((it: any, idx: number) => (
+                  <li key={it.id ?? idx} className="flex items-center justify-between gap-3">
                     <span className="text-ink-700">
                       {it.quantity}× {it.product_short_name || it.product_name}
                     </span>

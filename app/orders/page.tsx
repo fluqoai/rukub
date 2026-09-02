@@ -38,7 +38,7 @@ export default function OrdersPage() {
   const [filter, setFilter] = useState<StatusFilter>('all');
 
   // Combine DB orders + local orders (for backwards compat — only DB orders have orderId)
-  const orders: CombinedOrder[] = [
+  const orders = [
     ...dbOrders.map((o) => ({
       ...o,
       createdAt: o.placed_at,
@@ -60,8 +60,9 @@ export default function OrdersPage() {
             cj_order_id: lo.cjOrderId ?? null,
             tracking_number: lo.trackingNumber ?? null,
             placed_at: lo.createdAt,
+            updated_at: lo.createdAt,
             createdAt: lo.createdAt,
-            items: lo.items.map((i) => ({
+            items: lo.items.map((i: any) => ({
               product_id: i.productId,
               product_short_name: i.shortName,
               quantity: i.quantity,

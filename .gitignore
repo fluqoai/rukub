@@ -41,3 +41,14 @@ next-env.d.ts
 .dev.log.err
 .admin_hash.txt
 *.local-secret
+
+# OS / IDE / git
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+*.tmp
+Userskhayrat.git-credentials-safecredentials
+git-credentials-safecredentials

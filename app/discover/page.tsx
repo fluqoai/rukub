@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, SlidersHorizontal, X, Sparkles, Loader2, Warehouse } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
@@ -25,6 +25,18 @@ type ProductsResponse = {
 const PAGE_SIZE = 24;
 
 export default function DiscoverPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-sage-500" />
+      </main>
+    }>
+      <DiscoverContent />
+    </Suspense>
+  );
+}
+
+function DiscoverContent() {
   const { locale } = useI18n();
   const Arrow = locale === 'ar' ? ArrowLeft : ArrowRight;
   const searchParams = useSearchParams();

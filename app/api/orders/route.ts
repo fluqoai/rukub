@@ -32,7 +32,7 @@ function toLocalOrder(
   row: Awaited<ReturnType<typeof getOrder>>,
   input: CreateOrderInput
 ): Order {
-  const items: CartItem[] = (row?.items ?? []).map((it) => ({
+  const items: CartItem[] = (row?.items ?? []).map((it: any) => ({
     productId: it.product_id,
     slug: it.product_id,
     name: it.product_name,

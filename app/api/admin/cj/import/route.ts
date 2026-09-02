@@ -1,6 +1,10 @@
 // Admin: import a CJ product by pid.
 // Returns the CJ product details (name, image, price, etc.) pre-formatted
 // for the admin product form.
+//
+// Note: the real CJ API returns many fields (pid, productNameEn, threeCategoryName,
+// brandName, productImage, etc.) that aren't on our internal CJProduct type.
+// We accept the full response as `any` here to access all real fields.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAdmin } from '@/lib/admin-auth-server';
@@ -14,19 +18,22 @@ export async function GET(req: NextRequest) {
   try {
     const pid = req.nextUrl.searchParams.get('pid');
     if (!pid) return NextResponse.json({ success: false, error: 'pid مطلوب' }, { status: 400 });
-    const cj = await getProductDetails(pid);
-    if (!cj) return NextResponse.json({ success: false, error: 'المنتج غير موجود في CJ' }, { status: 404 });
+    const raw = await getProductDetails(pid);
+    if (!raw) return NextResponse.json({ success: false, error: 'المنتج غير موجود في CJ' }, { status: 404 });
 
-    // Pre-fill the admin form
-    const priceUSD = parseFloat(String(cj.sellPrice ?? 0)) || 0;
-    const costUSD = parseFloat(String((cj as any).cjPrice ?? cj.sellPrice ?? 0)) || 0;
-    // Suggested retail: 2.5x cost in SAR (roughly), or sellPrice if available
+    // The real API response has different field names than our static types.
+    // Cast to any so we can read the actual response fields.
+    const cj = raw as any;
+
+    // Suggested pricing
+    const priceUSD = parseFloat(String(cj.sellPrice ?? cj.variants?.[0]?.sellPrice ?? cj.basePrice ?? 0)) || 0;
+    const costUSD = parseFloat(String(cj.basePrice ?? cj.price ?? 0)) || 0;
     const suggestedPrice = priceUSD > 0 ? Math.round(priceUSD * 3.75) : Math.round(costUSD * 3.75 * 2.5);
     const suggestedCost = Math.round(costUSD * 3.75);
 
     return NextResponse.json({
       success: true,
-      cjProduct: cj,
+      cjProduct: raw,
       prefill: {
         id: `CJ-${cj.pid}`,
         name: cj.productNameEn || cj.productName || 'CJ Product',
@@ -41,7 +48,7 @@ export async function GET(req: NextRequest) {
         badge: null,
         tier: 1,
         is_hero: false,
-        cj_product_id: cj.pid,
+        cj_product_id: String(cj.pid ?? ''),
         category_name: cj.threeCategoryName || cj.twoCategoryName || cj.oneCategoryName || null,
         brand: cj.brandName || null,
         weight: cj.productWeight ? Math.round(Number(cj.productWeight)) : null,

@@ -104,7 +104,7 @@ function TabbyMockContent() {
           <div className="mb-6 rounded-2xl border border-wood-500/20 bg-wood-400/5 p-3 text-xs text-wood-700">
             <p className="font-medium">وضع تجريبي — Tabby Simulation</p>
             <p className="mt-1 text-wood-700/80">
-              محاكاة لصفحة Tabby. اضغط "موافق" لإتمام الطلب أو "رفض" لإلغائه.
+              محاكاة لصفحة Tabby. اضغط «موافق» لإتمام الطلب أو «رفض» لإلغائه.
             </p>
           </div>
 
@@ -190,7 +190,7 @@ function TabbyMockContent() {
           </div>
 
           <p className="mt-6 text-center text-[10px] text-ink-500">
-            بضغط "موافق" فإنك توافق على شروط وأحكام Tabby
+            بضغط «موافق» فإنك توافق على شروط وأحكام Tabby
           </p>
         </div>
       </Container>

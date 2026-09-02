@@ -13,6 +13,7 @@ import {
   Eye,
   Loader2,
   RefreshCw,
+  Package,
 } from 'lucide-react';
 import { useDbOrders, type Order, type OrderStatus } from '@/lib/hooks/useDbOrders';
 import { AdminHeader } from '@/components/admin/AdminHeader';
@@ -29,12 +30,6 @@ const statusInfo: Record<OrderStatus, { text: string; color: string; Icon: typeo
   cancelled: { text: 'ملغي', color: 'bg-red-100 text-red-700', Icon: AlertCircle },
   refunded: { text: 'مسترد', color: 'bg-ink-900/8 text-ink-700', Icon: RefreshCw },
 };
-
-function Package(props: any) {
-  return <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M16.5 9.4 7.55 4.24" /><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
-  </svg>;
-}
 
 export default function AdminOrdersPage() {
   const { orders, loading, error, refetch } = useDbOrders();
@@ -117,13 +112,14 @@ export default function AdminOrdersPage() {
             />
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {[
-              { key: 'all' as const, label: 'الكل' },
-              { key: 'confirmed' as const, label: 'مؤكدة' },
-              { key: 'pending_cj_sync' as const, label: 'بانتظار' },
-              { key: 'manual_followup' as const, label: 'متابعة' },
-              { key: 'cancelled' as const, label: 'ملغية' },
-            ].map((f) => (
+            {([
+              { key: 'all', label: 'الكل' },
+              { key: 'pending', label: 'بانتظار' },
+              { key: 'confirmed', label: 'مؤكدة' },
+              { key: 'shipped', label: 'تم الشحن' },
+              { key: 'delivered', label: 'مسلّمة' },
+              { key: 'cancelled', label: 'ملغية' },
+            ] as const).map((f) => (
               <button
                 key={f.key}
                 type="button"

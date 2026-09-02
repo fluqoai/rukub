@@ -1,11 +1,27 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { Suspense, useState, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Container } from '@/components/ui/Container';
 
 export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <main className="flex min-h-[90vh] items-center justify-center bg-linen-100/50">
+      <Loader2 className="h-6 w-6 animate-spin text-ink-500" />
+    </main>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
   const redirectTo = search.get('redirect') || '/admin';

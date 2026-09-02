@@ -81,7 +81,7 @@ export async function createProduct(input: ProductCreateInput): Promise<ProductR
   const supabase = createAdminSupabase();
   const audienceLabels = { women: 'للنساء', men: 'للرجال', shared: 'مشترك' };
   const margin = input.price > 0 ? (input.price - input.cost) / input.price : 0;
-  const row: ProductInsert = {
+  const row = {
     id: input.id,
     name: input.name,
     short_name: input.short_name,
@@ -98,6 +98,7 @@ export async function createProduct(input: ProductCreateInput): Promise<ProductR
     tier: input.tier ?? 1,
     is_hero: input.is_hero ?? false,
     cj_product_id: input.cj_product_id ?? null,
+    category_id: null,
     category_name: input.category_name ?? null,
     brand: input.brand ?? null,
     weight: input.weight ?? null,
@@ -108,9 +109,10 @@ export async function createProduct(input: ProductCreateInput): Promise<ProductR
     rating: input.rating ?? 0,
     review_count: input.review_count ?? 0,
     sales_count: input.sales_count ?? 0,
+    metadata: {},
     active: input.active ?? true,
   };
-  const { data, error } = await supabase.from('products').insert(row).select().single();
+  const { data, error } = await (supabase.from('products') as any).insert(row).select().single();
   if (error) throw new Error(`Failed to create product: ${error.message}`);
   return data as ProductRow;
 }
@@ -155,7 +157,7 @@ export async function updateProduct(productId: string, updates: ProductUpdateInp
       patch.margin = newPrice > 0 ? Math.round(((newPrice - newCost) / newPrice) * 100) / 100 : 0;
     }
   }
-  const { data, error } = await supabase.from('products').update(patch).eq('id', productId).select().single();
+  const { data, error } = await (supabase.from('products') as any).update(patch).eq('id', productId).select().single();
   if (error) throw new Error(`Failed to update product: ${error.message}`);
   return data as ProductRow;
 }
@@ -169,7 +171,7 @@ export async function deleteProduct(productId: string, hard = false): Promise<vo
     const { error } = await supabase.from('products').delete().eq('id', productId);
     if (error) throw new Error(`Failed to delete product: ${error.message}`);
   } else {
-    const { error } = await supabase.from('products').update({ active: false }).eq('id', productId);
+    const { error } = await (supabase.from('products') as any).update({ active: false }).eq('id', productId);
     if (error) throw new Error(`Failed to deactivate product: ${error.message}`);
   }
 }

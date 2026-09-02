@@ -45,10 +45,14 @@ export async function createOrder(input: CreateOrderInput) {
   const supabase = createAdminSupabase();
 
   // 1. Insert the order (trigger auto-creates/updates customer)
-  const orderInsert: OrderInsert = {
+  const orderInsert = {
     id: input.id,
     status: input.status ?? 'pending',
     payment_method: input.paymentMethod,
+    payment_status: 'pending',
+    customer_id: null,
+    cj_error: null,
+    metadata: {},
     subtotal: input.subtotal,
     shipping_cost: input.shippingCost,
     total: input.total,
@@ -68,8 +72,7 @@ export async function createOrder(input: CreateOrderInput) {
     },
   };
 
-  const { data: order, error: orderError } = await supabase
-    .from('orders')
+  const { data: order, error: orderError } = await (supabase.from('orders') as any)
     .insert(orderInsert)
     .select()
     .single();
@@ -79,7 +82,7 @@ export async function createOrder(input: CreateOrderInput) {
   }
 
   // 2. Insert order items
-  const items: OrderItemInsert[] = input.items.map((item) => ({
+  const items = input.items.map((item) => ({
     order_id: input.id,
     product_id: item.productId,
     product_name: item.productName,
@@ -88,10 +91,10 @@ export async function createOrder(input: CreateOrderInput) {
     price: item.price,
     subtotal: item.price * item.quantity,
     variant: item.variant ?? null,
+    metadata: {},
   }));
 
-  const { error: itemsError } = await supabase
-    .from('order_items')
+  const { error: itemsError } = await (supabase.from('order_items') as any)
     .insert(items);
 
   if (itemsError) {
@@ -117,13 +120,12 @@ export async function getOrder(orderId: string) {
 
   if (orderError || !order) return null;
 
-  const { data: items } = await supabase
-    .from('order_items')
+  const { data: items } = await (supabase.from('order_items') as any)
     .select('*')
     .eq('order_id', orderId)
     .order('created_at', { ascending: true });
 
-  return { ...order, items: items ?? [] };
+  return { ...(order as any), items: items ?? [] };
 }
 
 /**
@@ -185,8 +187,7 @@ export async function updateOrderStatus(
   if (extras?.cjError !== undefined) updates.cj_error = extras.cjError;
   if (extras?.paymentStatus !== undefined) updates.payment_status = extras.paymentStatus;
 
-  const { data, error } = await supabase
-    .from('orders')
+  const { data, error } = await (supabase.from('orders') as any)
     .update(updates)
     .eq('id', orderId)
     .select()
@@ -216,12 +217,11 @@ export async function getOrderStats() {
     .eq('status', 'confirmed');
 
   // Revenue (sum of confirmed orders)
-  const { data: revenueData } = await supabase
-    .from('orders')
+  const { data: revenueData } = await (supabase.from('orders') as any)
     .select('total')
     .eq('status', 'confirmed');
 
-  const revenue = (revenueData ?? []).reduce((sum, o) => sum + (o.total ?? 0), 0);
+  const revenue = (revenueData ?? []).reduce((sum: number, o: any) => sum + (o.total ?? 0), 0);
 
   // Unique customers
   const { data: customers } = await supabase

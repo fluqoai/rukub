@@ -5,9 +5,9 @@
 import 'server-only';
 import type { WhatsAppMessage, WhatsAppSendResult, WhatsAppStatus } from './whatsapp-types';
 import type { OrderEmailContext } from './email-types';
-// Note: renderWhatsApp is in ./whatsapp-templates (client-safe).
-// Re-exported here for backwards compatibility.
-export { renderWhatsApp, type WhatsAppTemplate } from './whatsapp-templates';
+import { renderWhatsApp, type WhatsAppTemplate } from './whatsapp-templates';
+// Re-export for backwards compatibility
+export { renderWhatsApp, type WhatsAppTemplate };
 
 const WHATSAPP_TOKEN = process.env.WHATSAPP_API_KEY;
 const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID;

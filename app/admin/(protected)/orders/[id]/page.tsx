@@ -464,7 +464,7 @@ export default function AdminOrderDetailPage({
                   color="text-sage-600"
                 />
                 <ActivityItem
-                  Icon={order.status === 'pending_cj_sync' ? Clock : CheckCircle2}
+                  Icon={(order as any).status === 'pending_cj_sync' ? Clock : CheckCircle2}
                   text={order.cjOrderId ? 'تم مزامنة الطلب مع CJ' : 'في انتظار المزامنة مع CJ'}
                   time={order.cjOrderId ? 'مؤتمت' : '—'}
                   color={order.cjOrderId ? 'text-sage-600' : 'text-wood-600'}

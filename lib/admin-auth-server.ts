@@ -61,31 +61,41 @@ export async function verifyCredentials(
   password: string
 ): Promise<{ ok: true; admin: AdminUser } | { ok: false; error: AdminAuthError }> {
   const supabase = createAdminSupabase();
+  // The admin_users table isn't in the generated Supabase types, so we cast.
+  type AdminRow = {
+    id: string;
+    email: string;
+    full_name: string | null;
+    role: string;
+    active: boolean;
+    password_hash: string | null;
+  };
   const { data: row, error } = await supabase
     .from('admin_users')
     .select('id, email, full_name, role, active, password_hash')
     .eq('email', email.toLowerCase().trim())
     .single();
+  const adminRow = row as unknown as AdminRow | null;
 
-  if (error || !row) {
+  if (error || !adminRow) {
     return { ok: false, error: { kind: 'invalid_credentials', message: 'بيانات الدخول غير صحيحة' } };
   }
-  if (!row.active) {
+  if (!adminRow.active) {
     return { ok: false, error: { kind: 'inactive', message: 'الحساب موقوف' } };
   }
-  if (!row.password_hash) {
+  if (!adminRow.password_hash) {
     return { ok: false, error: { kind: 'no_password', message: 'لم يتم تعيين كلمة مرور. تواصل مع الدعم.' } };
   }
-  if (!verifyPassword(password, row.password_hash)) {
+  if (!verifyPassword(password, adminRow.password_hash)) {
     return { ok: false, error: { kind: 'invalid_credentials', message: 'بيانات الدخول غير صحيحة' } };
   }
   return {
     ok: true,
     admin: {
-      id: row.id,
-      email: row.email,
-      full_name: row.full_name,
-      role: row.role,
+      id: adminRow.id,
+      email: adminRow.email,
+      full_name: adminRow.full_name,
+      role: adminRow.role,
     },
   };
 }
@@ -101,7 +111,7 @@ export async function createSession(adminId: string, request?: Request): Promise
     request?.headers.get('x-real-ip') ??
     null;
 
-  const { error } = await supabase.from('admin_sessions').insert({
+  const { error } = await (supabase.from('admin_sessions') as any).insert({
     admin_id: adminId,
     token: tokenHash(token), // store hash, not raw token
     user_agent: userAgent,
@@ -111,8 +121,7 @@ export async function createSession(adminId: string, request?: Request): Promise
   if (error) throw new Error(`Failed to create session: ${error.message}`);
 
   // Update last_login_at (best-effort)
-  await supabase
-    .from('admin_users')
+  await (supabase.from('admin_users') as any)
     .update({ last_login_at: new Date().toISOString() })
     .eq('id', adminId);
 
@@ -121,7 +130,7 @@ export async function createSession(adminId: string, request?: Request): Promise
 
 export async function destroySession(token: string): Promise<void> {
   const supabase = createAdminSupabase();
-  await supabase.from('admin_sessions').delete().eq('token', tokenHash(token));
+  await (supabase.from('admin_sessions') as any).delete().eq('token', tokenHash(token));
 }
 
 export async function getCurrentAdmin(): Promise<AdminUser | null> {
@@ -131,26 +140,29 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
 
   const supabase = createAdminSupabase();
   // First clean up expired sessions (best effort)
-  await supabase.rpc('delete_expired_admin_sessions' as any).catch(() => null);
+  try {
+    await (supabase as any).rpc('delete_expired_admin_sessions');
+  } catch {
+    // ignore — function may not exist
+  }
 
-  const { data: session } = await supabase
-    .from('admin_sessions')
+  const { data: session } = await (supabase.from('admin_sessions') as any)
     .select('admin_id, expires_at')
     .eq('token', tokenHash(token))
-    .single();
+    .single() as { data: { admin_id: string; expires_at: string } | null };
   if (!session) return null;
   if (new Date(session.expires_at) < new Date()) {
     // expired → clean up
-    await supabase.from('admin_sessions').delete().eq('token', tokenHash(token));
+    await (supabase.from('admin_sessions') as any).delete().eq('token', tokenHash(token));
     return null;
   }
 
-  const { data: row } = await supabase
-    .from('admin_users')
+  type AdminUserRow = { id: string; email: string; full_name: string | null; role: string; active: boolean };
+  const { data: row } = await (supabase.from('admin_users') as any)
     .select('id, email, full_name, role, active')
     .eq('id', session.admin_id)
     .eq('active', true)
-    .single();
+    .single() as { data: AdminUserRow | null };
   if (!row) return null;
 
   return {
