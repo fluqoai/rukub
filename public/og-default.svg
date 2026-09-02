@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F5F1EA"/>
+      <stop offset="100%" stop-color="#E5EBDB"/>
+    </linearGradient>
+    <radialGradient id="blob1" cx="0.2" cy="0.3" r="0.4">
+      <stop offset="0%" stop-color="#A8B88A" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#A8B88A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blob2" cx="0.8" cy="0.7" r="0.3">
+      <stop offset="0%" stop-color="#B8956A" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#B8956A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#blob1)"/>
+  <rect width="1200" height="630" fill="url(#blob2)"/>
+
+  <!-- Logo box -->
+  <g transform="translate(100, 200)">
+    <rect width="120" height="120" rx="24" fill="#6B7A5A"/>
+    <text x="60" y="86" font-family="ui-sans-serif, system-ui" font-size="80" font-weight="700" text-anchor="middle" fill="#F5F1EA">ر</text>
+  </g>
+
+  <!-- Title -->
+  <text x="100" y="400" font-family="ui-sans-serif, system-ui, -apple-system, 'IBM Plex Sans Arabic'" font-size="80" font-weight="700" fill="#2C2A26">ركوب</text>
+
+  <!-- Subtitle -->
+  <text x="100" y="460" font-family="ui-sans-serif, system-ui" font-size="32" font-weight="500" fill="#7A766E">إكسسوارات سيارات مختارة للسعودية</text>
+
+  <!-- Footer line -->
+  <text x="100" y="540" font-family="ui-monospace, monospace" font-size="22" fill="#A8A296">rukub.shop</text>
+
+  <!-- Decorative car silhouette (abstract) -->
+  <g transform="translate(800, 350)" opacity="0.15">
+    <path d="M 0 50 Q 50 0 150 0 L 280 0 Q 380 0 430 50 L 430 100 Q 430 130 400 130 L 30 130 Q 0 130 0 100 Z" fill="#6B7A5A"/>
+    <circle cx="80" cy="130" r="30" fill="#2C2A26"/>
+    <circle cx="350" cy="130" r="30" fill="#2C2A26"/>
+  </g>
+</svg>

@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 245 241 234;     /* linen-100 */
+    --foreground: 44 42 38;        /* ink-900 */
+    --sage: 107 122 90;            /* sage-500 */
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
+    font-feature-settings: 'kern', 'liga', 'calt';
+  }
+
+  /* selection — subtle, on-brand */
+  ::selection {
+    background-color: rgb(107 122 90 / 0.18);
+    color: rgb(44 42 38);
+  }
+
+  /* no outline rings — use border instead */
+  *:focus-visible {
+    outline: 2px solid rgb(107 122 90 / 0.4);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* smooth scroll for in-page anchors only */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Container utility */
+  .container-tight {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8;
+  }
+
+  /* The "eyebrow" label above section titles */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-ink-500;
+  }
+
+  .eyebrow::before {
+    content: '';
+    @apply h-px w-8 bg-wood-500;
+  }
+
+  /* Primary CTA — solid sage, no hover transform */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-sage-500 px-6 py-3 text-sm font-medium text-linen-50 transition-colors hover:bg-sage-600 active:bg-sage-700;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-sage-500/30 bg-transparent px-6 py-3 text-sm font-medium text-ink-900 transition-colors hover:bg-sage-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-1.5 text-sm font-medium text-ink-700 transition-colors hover:text-sage-600;
+  }
+
+  /* Decorative blob — for hero background, no mouse interaction */
+  .blob {
+    @apply pointer-events-none absolute rounded-full opacity-60 blur-3xl;
+  }
+}
+
+@layer utilities {
+  /* text-balance for headings */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

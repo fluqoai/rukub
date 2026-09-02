@@ -1,0 +1,169 @@
+import type { Metadata, Viewport } from 'next';
+import { IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from 'next/font/google';
+import { I18nProvider } from '@/lib/i18n';
+import { Header } from '@/components/landing/Header';
+import { Footer } from '@/components/landing/Footer';
+import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/seo/JsonLd';
+import './globals.css';
+
+const ibmArabic = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic', 'latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-arabic',
+  display: 'swap',
+});
+
+const ibmMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-mono',
+  display: 'swap',
+});
+
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://rukub.shop';
+
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'ركوب · إكسسوارات سيارات مختارة للسعودية',
+    template: '%s · ركوب',
+  },
+  description:
+    'إكسسوارات سيارات مختارة بعناية للسوق السعودي. توصيل سريع من مستودع السعودية، دفع عند الاستلام، تقسيط Tabby. أكثر من 20 منتج بهامش ربح عالٍ.',
+  keywords: [
+    'إكسسوارات سيارات',
+    'اكسسوارات سيارة',
+    'دروب شيبنج السعودية',
+    'car accessories Saudi Arabia',
+    'car accessories KSA',
+    'قطع غيار سيارات',
+    'إكسسوارات داخلية سيارة',
+  ],
+  authors: [{ name: 'ركوب' }],
+  creator: 'ركوب',
+  publisher: 'ركوب',
+  formatDetection: { telephone: false, address: false, email: false },
+  alternates: {
+    canonical: '/',
+    languages: {
+      ar: '/',
+      en: '/en',
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'ar_SA',
+    url: SITE_URL,
+    siteName: 'ركوب · Rukub',
+    title: 'ركوب · إكسسوارات سيارات مختارة للسعودية',
+    description:
+      'إكسسوارات سيارات مختارة بعناية للسوق السعودي. توصيل سريع، دفع عند الاستلام، تقسيط Tabby.',
+    images: [
+      {
+        url: '/og-default.png',
+        width: 1200,
+        height: 630,
+        alt: 'ركوب · إكسسوارات سيارات مختارة للسعودية',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ركوب · إكسسوارات سيارات مختارة للسعودية',
+    description: 'توصيل سريع + دفع عند الاستلام + تقسيط Tabby',
+    images: ['/og-default.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+    shortcut: '/favicon.ico',
+  },
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'ركوب',
+    statusBarStyle: 'default',
+  },
+  applicationName: 'ركوب',
+  category: 'shopping',
+  classification: 'E-commerce',
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-title': 'ركوب',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'format-detection': 'telephone=no',
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#6B7A5A' },
+    { media: '(prefers-color-scheme: dark)', color: '#363D2E' },
+  ],
+  colorScheme: 'light',
+  viewportFit: 'cover',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html
+      lang="ar"
+      dir="rtl"
+      className={`${ibmArabic.variable} ${ibmMono.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <OrganizationJsonLd />
+        <WebSiteJsonLd />
+        {/* Preconnect to external image sources */}
+        <link rel="preconnect" href="https://picsum.photos" />
+        <link rel="preconnect" href="https://fastly.picsum.photos" />
+        <link rel="dns-prefetch" href="https://picsum.photos" />
+      </head>
+      <body className="font-sans">
+        <I18nProvider>
+          <Header />
+          {children}
+          <Footer />
+        </I18nProvider>
+        {/* Service worker registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                    console.log('SW registration skipped:', err.message);
+                  });
+                });
+              }
+            `,
+          }}
+        />
+      </body>
+    </html>
+  );
+}
