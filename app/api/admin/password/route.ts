@@ -99,7 +99,7 @@ export async function PATCH(req: NextRequest) {
     const newHash = hashPassword(newPassword);
     const { error: updateError } = await (supabase
       .from('admin_users') as any)
-      .update({ password_hash: newHash, updated_at: new Date().toISOString() })
+      .update({ password_hash: newHash })
       .eq('id', admin.id);
 
     if (updateError) {
