@@ -105,7 +105,6 @@ export function Footer() {
             <span className="rounded bg-linen-50 px-2 py-1 font-mono text-ink-700">Visa</span>
             <span className="rounded bg-linen-50 px-2 py-1 font-mono text-ink-700">MC</span>
             <span className="rounded bg-linen-50 px-2 py-1 font-mono text-ink-700">Apple Pay</span>
-            <span className="rounded bg-linen-50 px-2 py-1 font-mono text-ink-700">Tabby</span>
           </div>
         </div>
       </Container>

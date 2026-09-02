@@ -1,3 +1,6 @@
+// @ts-check
+import { withSentryConfig } from '@sentry/nextjs';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -62,4 +65,19 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Only run Sentry build plugin when DSN is set; otherwise it's a no-op
+// wrapper (withSentryConfig is safe even when no Sentry project is active).
+const sentryBuildPlugin = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(nextConfig, {
+      // Disable Sentry telemetry from build-time (we don't need it)
+      silent: true,
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      // Don't upload source maps by default
+      widenClientFileUpload: false,
+      hideSourceMaps: true,
+      disableLogger: true,
+    })
+  : nextConfig;
+
+export default sentryBuildPlugin;

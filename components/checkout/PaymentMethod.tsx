@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Banknote, CreditCard, Clock, Check, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Banknote, CreditCard, Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useCartStore, selectGrandTotal, selectTotalItems } from '@/lib/cart-store';
 import { formatSAR } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
-export type PaymentOption = 'cod' | 'tap' | 'tabby';
+export type PaymentOption = 'cod' | 'tap';
 
 type PaymentMethodProps = {
   onBack: () => void;
@@ -35,12 +35,6 @@ const methods: Array<{
     desc: 'ادفع بـ Visa / Mastercard / مدى / Apple Pay — مشفّر وآمن',
     Icon: CreditCard,
   },
-  {
-    key: 'tabby',
-    title: 'تقسيط Tabby',
-    desc: '4 دفعات بدون فوائد — يستحق للطلبات فوق 200 ريال',
-    Icon: Clock,
-  },
 ];
 
 export function PaymentMethod({ onBack, onPlaceOrder }: PaymentMethodProps) {
@@ -49,10 +43,8 @@ export function PaymentMethod({ onBack, onPlaceOrder }: PaymentMethodProps) {
   const totalItems = useCartStore(selectTotalItems);
   const grandTotal = useCartStore(selectGrandTotal);
 
-  // Default depends on total
-  const [selected, setSelected] = useState<PaymentOption>(
-    grandTotal >= 200 ? 'tabby' : 'cod'
-  );
+  // Default: COD (safer for first launch in Saudi)
+  const [selected, setSelected] = useState<PaymentOption>('cod');
   const [agreed, setAgreed] = useState(false);
 
   const submit = (e: React.FormEvent) => {
@@ -169,6 +161,3 @@ export function PaymentMethod({ onBack, onPlaceOrder }: PaymentMethodProps) {
     </form>
   );
 }
-
-// re-export for the parent
-

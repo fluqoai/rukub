@@ -16,7 +16,7 @@ export function OrganizationJsonLd({}: OrganizationProps) {
     alternateName: 'Rukub',
     url: SITE_URL,
     logo: `${SITE_URL}/icon-512.png`,
-    description: 'إكسسوارات سيارات مختارة للسوق السعودي. شحن سريع من مستودع السعودية، دفع عند الاستلام، تقسيط Tabby.',
+    description: 'إكسسوارات سيارات مختارة للسوق السعودي. شحن سريع من مستودع السعودية، دفع عند الاستلام، وبطاقات مدى / فيزا / Apple Pay.',
     address: {
       '@type': 'PostalAddress',
       addressCountry: 'SA',

@@ -203,8 +203,6 @@ export default function CheckoutPage() {
         setSubmitError(err instanceof Error ? err.message : 'فشل الدفع');
         setSubmitting(false);
       }
-    } else if (method === 'tabby') {
-      router.push(`/checkout/tabby?order=${localId}`);
     }
   };
 
