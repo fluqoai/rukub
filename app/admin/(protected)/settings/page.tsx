@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Lock, CreditCard, Globe, Save, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
+import { Lock, CreditCard, Globe, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/commerce';
 
 type Settings = {
   storeName: string;
@@ -17,19 +18,18 @@ type Settings = {
 
 const DEFAULT_SETTINGS: Settings = {
   storeName: 'ركوب',
-  storeEmail: 'support@rukub.shop',
-  storePhone: '+966 5X XXX XXXX',
-  freeShipping: 199,
+  storeEmail: process.env.NEXT_PUBLIC_STORE_EMAIL || 'support@rukub.shop',
+  storePhone: process.env.NEXT_PUBLIC_STORE_PHONE || 'غير مضاف — التواصل بالبريد',
+  freeShipping: FREE_SHIPPING_THRESHOLD,
   codEnabled: true,
-  tapEnabled: true,
+  tapEnabled: false,
   tapMode: 'mock',
   cjMode: 'mock',
 };
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-  const [saved, setSaved] = useState<null | 'ok' | 'err'>(null);
-  const [savedMessage, setSavedMessage] = useState('');
+  const [statusError, setStatusError] = useState('');
 
   const [currentPwd, setCurrentPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
@@ -55,19 +55,13 @@ export default function AdminSettingsPage() {
               cjMode: json.status.cjMode,
             }));
           }
-        }
+        } else { setStatusError('تعذر قراءة حالة الاتصال؛ قد تكون جلسة الإدارة انتهت.'); }
       } catch {
-        // silent — defaults stay
+        setStatusError('تعذر قراءة حالة الاتصال. حدّث الصفحة للمحاولة مجددًا.');
       }
     })();
     return () => { alive = false; };
   }, []);
-
-  const handleSave = () => {
-    setSaved('ok');
-    setSavedMessage('تم حفظ الإعدادات');
-    setTimeout(() => setSaved(null), 2500);
-  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +109,8 @@ export default function AdminSettingsPage() {
       <AdminHeader title="الإعدادات" subtitle="إعدادات المتجر والحساب" />
 
       <div className="p-6">
+        <p className="mb-5 rounded-2xl border border-sage-500/20 bg-white p-4 text-sm leading-7 text-ink-700">معلومات التشغيل أدناه للعرض فقط وتُدار من إعدادات المشروع والاستضافة. لا تغيّر هذه الصفحة الدفع أو الشحن. يمكنك تغيير كلمة مرور الإدارة من النموذج بالأسفل.</p>
+        {statusError && <p role="alert" className="mb-4 text-sm text-red-700">{statusError}</p>}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Store info */}
           <div className="rounded-3xl border border-sage-500/10 bg-linen-50 p-6">
@@ -125,7 +121,7 @@ export default function AdminSettingsPage() {
               <h2 className="text-base font-semibold text-ink-900">معلومات المتجر</h2>
             </div>
 
-            <div className="space-y-4">
+            <fieldset disabled className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-ink-700">اسم المتجر</label>
                 <input
@@ -167,7 +163,7 @@ export default function AdminSettingsPage() {
                   dir="ltr"
                 />
               </div>
-            </div>
+            </fieldset>
           </div>
 
           {/* Payment methods */}
@@ -179,7 +175,7 @@ export default function AdminSettingsPage() {
               <h2 className="text-base font-semibold text-ink-900">طرق الدفع</h2>
             </div>
 
-            <div className="space-y-3">
+            <fieldset disabled className="space-y-3">
               <ToggleRow
                 label="الدفع عند الاستلام (COD)"
                 description="العميل يدفع للمندوب نقداً"
@@ -192,7 +188,8 @@ export default function AdminSettingsPage() {
                 enabled={settings.tapEnabled}
                 onChange={(v) => setSettings({ ...settings, tapEnabled: v })}
               />
-            </div>
+            </fieldset>
+            <p className="mt-4 text-xs leading-6 text-ink-500">الدفع الإلكتروني غير مفعّل في صفحة الدفع، بانتظار اعتماد البوابة. وجود مفتاح اتصال لا يعني فتح الدفع للعملاء.</p>
           </div>
 
           {/* API keys status */}
@@ -339,25 +336,6 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-end gap-3">
-          {saved && (
-            <span
-              className={`text-xs ${
-                saved === 'ok' ? 'text-sage-700' : 'text-rose-700'
-              }`}
-            >
-              {savedMessage}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={handleSave}
-            className="inline-flex items-center gap-2 rounded-full bg-sage-500 px-6 py-3 text-sm font-medium text-linen-50 transition-colors hover:bg-sage-600"
-          >
-            <Save className="h-4 w-4" />
-            حفظ الإعدادات
-          </button>
-        </div>
       </div>
     </>
   );

@@ -3,6 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { publicVariants, validateVariants, cartLineKey } = require('../lib/catalog-variants.ts');
 const { validateArabicDraft } = require('../lib/arabic-draft.ts');
+const { productSource, matchesProductSource, arabicProductPatch, productFormError, adminJson } = require('../lib/admin-product-editor.ts');
 const variant = { vid: 'v1', pid: 'p1', sku: 'sku-red-m', name: 'Red M', labelAr: 'أحمر / M', image: null, enabled: true, priceSAR: 49, costSAR: 20, supplierPriceUSD: 1, shippingUSD: 3, stock: 5, origin: 'CN', logistics: 'Test', deliveryMin: 9, deliveryMax: 14, checkedAt: new Date().toISOString() };
 const product = { id: 'p', name: 'منتج', short_name: 'منتج', price: 49, cost: 20, active: true, images: [], variants: [variant], metadata: { variant_schema: 1, supplier: 'CJdropshipping' } };
 let current = product;
@@ -60,4 +61,53 @@ test('Arabic options appear in email, with HTML safely escaped', () => {
   const { renderEmail } = require('../lib/email-templates.ts');
   const result = renderEmail('order_created', { orderId: 'TEST', customerName: '<b>اسم</b>', items: [{ name: 'منتج — أحمر / M <script>x</script>', quantity: 1, price: 49 }], subtotal: 49, shippingCost: 15, total: 64, shipping: { city: 'الرياض', district: 'اختبار', phone: '0500000000' }, paymentMethod: 'cod' });
   assert.match(result.text, /أحمر \/ M/); assert.ok(!result.html.includes('<script>')); assert.ok(result.html.includes('&lt;script&gt;'));
+});
+
+test('editor reports missing fields and blocks unverified publication, not inactive drafts', () => {
+  assert.match(productFormError({ id: 'draft' }), /اسم المنتج/);
+  const form = { ...product, description: 'وصف', tagline: 'عبارة', active: false, variants: [{ ...variant, enabled: false, checkedAt: null, stock: null }] };
+  assert.equal(productFormError(form), null);
+  assert.match(productFormError({ ...form, active: true }), /فعّل نسخة/);
+});
+
+test('source match ignores JSONB property order but rejects other descriptions and VIDs', () => {
+  const form = { ...product, name: 'Source', description: '<p>Source details</p>' };
+  const source = productSource(form);
+  assert.equal(matchesProductSource(form, { variants: source.variants, description: source.description, name: source.name }), true);
+  assert.equal(matchesProductSource(form, { ...source, description: 'Another product' }), false);
+  assert.equal(matchesProductSource(form, { ...source, variants: [{ name: variant.name, vid: 'wrong' }] }), false);
+});
+
+test('applying Arabic preserves original source, prices and legacy supplier variants', () => {
+  const form = { ...product, name: 'Source', description: 'Source details', variants: [{ legacy: true }], metadata: { supplier_items: [{ pid: 'p1', vid: 'v1' }] } };
+  const generation = { id: 'draft-1', source: productSource(form) };
+  const draft = { name: 'حقيبة سفر', short_name: 'حقيبة', tagline: 'تنظيم', description: 'وصف عربي', usage: '', seo_title: '', seo_description: '', features: ['ميزة', ''], specifications: [], warnings: [], variants: [] };
+  const patch = arabicProductPatch(form, generation, draft);
+  assert.equal('variants' in patch, false);
+  assert.equal('price' in patch, false);
+  assert.equal('active' in patch, false);
+  assert.deepEqual(patch.metadata.features, ['ميزة']);
+  assert.equal(matchesProductSource({ ...form, ...patch }, generation.source), true);
+  assert.deepEqual(patch.metadata.supplier_items, form.metadata.supplier_items);
+});
+
+test('reviewed Arabic changes labels only and rejects malformed edited drafts', () => {
+  const form = { ...product, description: 'Source' };
+  const generation = { id: 'draft-2', source: productSource(form) };
+  const draft = { name: 'منتج عربي', short_name: 'منتج', tagline: 'تنظيم', description: 'وصف', usage: '', seo_title: '', seo_description: '', features: [], specifications: [], warnings: [], variants: [{ vid:'v1', labelAr:'أحمر متوسط' }] };
+  const patch = arabicProductPatch(form, generation, draft);
+  assert.equal(patch.variants[0].priceSAR, variant.priceSAR);
+  assert.equal(patch.variants[0].vid, variant.vid);
+  assert.equal(patch.variants[0].labelAr, 'أحمر متوسط');
+  assert.throws(() => arabicProductPatch(form, generation, { ...draft, name:'' }));
+});
+
+test('admin request explains expired sessions and non-JSON server responses', async () => {
+  const original = global.fetch;
+  try {
+    global.fetch = async () => new Response('', { status:401 });
+    await assert.rejects(() => adminJson('/test'), /انتهت جلسة/);
+    global.fetch = async () => new Response('<html>timeout</html>', { status:504 });
+    await assert.rejects(() => adminJson('/test'), /لم يكتمل رد الخادم/);
+  } finally { global.fetch = original; }
 });

@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAdmin } from '@/lib/admin-auth-server';
 import { getProduct, updateProduct, deleteProduct, type ProductUpdateInput } from '@/lib/db/products';
+import { productFormError } from '@/lib/admin-product-editor';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,9 +22,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!admin) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   try {
     const updates = (await req.json()) as ProductUpdateInput;
+    const previous = await getProduct(params.id);
+    if (!previous) return NextResponse.json({ success: false, error: 'المنتج غير موجود' }, { status: 404 });
+    const deactivatingOnly = Object.keys(updates).length === 1 && updates.active === false;
+    const validation = deactivatingOnly ? null : productFormError({ ...previous, ...updates, id: params.id });
+    if (validation) return NextResponse.json({ success: false, error: validation }, { status: 400 });
     const product = await updateProduct(params.id, updates);
     return NextResponse.json({ success: true, product });
   } catch (err) {
+    console.error('[admin/products] update failed', { operation: 'update', errorType: err instanceof Error ? err.name : 'unknown' });
     return NextResponse.json(
       { success: false, error: err instanceof Error ? err.message : 'Unknown' },
       { status: 500 }

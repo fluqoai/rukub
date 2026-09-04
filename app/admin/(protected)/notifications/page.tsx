@@ -92,6 +92,9 @@ export default function AdminNotificationsPage() {
       />
 
       <div className="p-6">
+        <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900">
+          السجل والتفضيلات هنا محفوظة في هذا المتصفح فقط. تغييرها لا يغيّر إعدادات إرسال البريد من الخادم، ولا يُعد هذا سجلًا شاملًا لرسائل المتجر.
+        </p>
         {/* Stats row */}
         <div className="mb-4 grid gap-3 sm:grid-cols-4">
           <StatPill label="إجمالي" value={stats.total} Icon={Bell} color="sage" />
@@ -107,7 +110,7 @@ export default function AdminNotificationsPage() {
 
         {/* Preferences section */}
         <div className="mb-6 rounded-3xl border border-sage-500/10 bg-linen-50 p-6">
-          <h2 className="mb-4 text-sm font-semibold text-ink-900">تفضيلات الإشعارات</h2>
+          <h2 className="mb-4 text-sm font-semibold text-ink-900">تفضيلات هذا المتصفح</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

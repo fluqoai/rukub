@@ -1,6 +1,7 @@
 'use client';
 
-import { Search, Bell, RefreshCw } from 'lucide-react';
+import { Bell, RefreshCw, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 type AdminHeaderProps = {
@@ -19,6 +20,7 @@ export function AdminHeader({ title, subtitle, onRefresh }: AdminHeaderProps) {
         now.toLocaleTimeString('ar-SA', {
           hour: '2-digit',
           minute: '2-digit',
+          timeZone: 'Asia/Riyadh',
         })
       );
     };
@@ -35,15 +37,7 @@ export function AdminHeader({ title, subtitle, onRefresh }: AdminHeaderProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="hidden items-center gap-2 rounded-full border border-sage-500/20 bg-linen-50 px-3 py-1.5 sm:flex">
-          <Search className="h-3.5 w-3.5 text-ink-500" />
-          <input
-            type="search"
-            placeholder="بحث سريع..."
-            className="w-32 border-none bg-transparent text-xs text-ink-900 placeholder:text-ink-500/70 focus:outline-none"
-          />
-          <span className="font-mono text-[9px] text-ink-300">⌘K</span>
-        </div>
+        <Link href="/" target="_blank" className="hidden items-center gap-2 rounded-xl border border-sage-500/20 px-3 py-2 text-xs sm:flex">معاينة المتجر<ExternalLink className="h-3.5 w-3.5" /></Link>
 
         {onRefresh && (
           <button
@@ -56,15 +50,13 @@ export function AdminHeader({ title, subtitle, onRefresh }: AdminHeaderProps) {
           </button>
         )}
 
-        <button
-          type="button"
+        <Link
+          href="/admin/notifications"
+          aria-label="الإشعارات"
           className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-sage-500/20 bg-linen-50 text-ink-700 transition-colors hover:bg-sage-50"
         >
           <Bell className="h-3.5 w-3.5" strokeWidth={1.5} />
-          <span className="absolute -end-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-wood-500 text-[9px] font-semibold text-linen-50">
-            3
-          </span>
-        </button>
+        </Link>
 
         <div className="hidden flex-col items-end md:flex">
           <span className="font-mono text-xs text-ink-700">{time}</span>

@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from 'next/font/google';
 import { I18nProvider } from '@/lib/i18n';
-import { Header } from '@/components/landing/Header';
-import { Footer } from '@/components/landing/Footer';
+import { StorefrontChrome } from '@/components/StorefrontChrome';
 import { OrganizationJsonLd, WebSiteJsonLd } from '@/components/seo/JsonLd';
 import './globals.css';
 
@@ -123,9 +122,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans">
         <I18nProvider>
-          <Header />
-          {children}
-          <Footer />
+          <StorefrontChrome>{children}</StorefrontChrome>
         </I18nProvider>
         {process.env.NODE_ENV === 'production' && (
           <Script id="rukub-service-worker" strategy="afterInteractive">

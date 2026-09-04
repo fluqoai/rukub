@@ -135,7 +135,8 @@ export async function createProduct(input: ProductCreateInput): Promise<ProductR
 export async function updateProduct(productId: string, updates: ProductUpdateInput): Promise<ProductRow> {
   const previous = await getProduct(productId);
   if (!previous) throw new Error('المنتج غير موجود');
-  if ((previous.metadata as any)?.variant_schema === 1 || (updates.metadata as any)?.variant_schema === 1) {
+  const deactivatingOnly = Object.keys(updates).length === 1 && updates.active === false;
+  if (!deactivatingOnly && ((previous.metadata as any)?.variant_schema === 1 || (updates.metadata as any)?.variant_schema === 1)) {
     updates = withVariantPrices({ ...previous, ...updates } as ProductCreateInput);
   }
   const supabase = createAdminSupabase();

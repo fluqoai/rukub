@@ -6,7 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAdmin } from '@/lib/admin-auth-server';
-import { listProducts, createProduct, type ProductCreateInput } from '@/lib/db/products';
+import { listProducts, createProduct, getProduct, type ProductCreateInput } from '@/lib/db/products';
+import { productFormError } from '@/lib/admin-product-editor';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,18 +37,21 @@ export async function POST(req: NextRequest) {
   if (!admin) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   try {
     const body = (await req.json()) as ProductCreateInput;
-    if (!body.id || !body.name || !body.short_name || !body.description || !body.tagline) {
+    const validation = productFormError(body);
+    if (validation) {
       return NextResponse.json(
-        { success: false, error: 'بيانات ناقصة (id, name, short_name, description, tagline)' },
+        { success: false, error: validation },
         { status: 400 }
       );
     }
+    if (await getProduct(body.id)) return NextResponse.json({ success: false, error: 'يوجد منتج بهذا المعرّف بالفعل. افتحه من الكتالوج لتعديله، أو اختر معرّفًا مختلفًا.' }, { status: 409 });
     if (!['women', 'men', 'shared'].includes(body.audience)) {
       return NextResponse.json({ success: false, error: 'audience غير صحيح' }, { status: 400 });
     }
     const product = await createProduct(body);
     return NextResponse.json({ success: true, product });
   } catch (err) {
+    console.error('[admin/products] create failed', { operation: 'create', errorType: err instanceof Error ? err.name : 'unknown' });
     return NextResponse.json(
       { success: false, error: err instanceof Error ? err.message : 'Unknown' },
       { status: 500 }
