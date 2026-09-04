@@ -10,9 +10,9 @@ import { cn } from '@/lib/utils';
 
 const links = [
   { label: 'المتجر', href: '/discover' },
-  { label: 'الراحة والتنظيم', href: '/shop/women' },
-  { label: 'التقنية والأمان', href: '/shop/men' },
-  { label: 'أساسيات يومية', href: '/shop/shared' },
+  { label: 'ترتيب وأناقة', href: '/shop/women' },
+  { label: 'تقنية واستعداد', href: '/shop/men' },
+  { label: 'العناية اليومية', href: '/shop/shared' },
 ];
 
 export function Header() {

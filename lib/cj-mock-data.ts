@@ -6,7 +6,7 @@ import type { CJProduct } from './cj-types';
 
 const u = (seed: string) => `https://picsum.photos/seed/${seed}/800/800`;
 
-const baseProducts: CJProduct[] = [
+const baseProducts: Array<Omit<CJProduct, 'inSaudiWarehouse'>> = [
   {
     id: 'CJ-1001',
     name: 'Car Phone Holder Mount Air Vent',

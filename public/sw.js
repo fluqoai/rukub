@@ -1,14 +1,12 @@
 // Rukub Service Worker
-// Basic offline support + cache-first for static assets
+// Conservative offline support. Application HTML and Next.js chunks stay
+// network-first so deployments never mix an old client bundle with new HTML.
 
-const CACHE_NAME = 'rukub-v2';
+const CACHE_NAME = 'rukub-v3';
 const STATIC_ASSETS = [
-  '/',
-  '/discover',
-  '/shop/women',
-  '/shop/men',
-  '/shop/shared',
   '/manifest.webmanifest',
+  '/icon.svg',
+  '/brand/rukub-hero.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -38,6 +36,7 @@ self.addEventListener('fetch', (event) => {
 
   // Skip admin, api, checkout
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/_next/')) return;
   if (
     url.pathname.startsWith('/admin') ||
     url.pathname.startsWith('/api') ||
@@ -62,17 +61,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for static assets (images, fonts, etc.)
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((response) => {
-        if (response.ok && response.type === 'basic') {
-          const cloned = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
-        }
-        return response;
-      });
-    })
-  );
+  // Only cache known public assets. Everything else remains network-owned.
+  if (STATIC_ASSETS.includes(url.pathname)) {
+    event.respondWith(caches.match(request).then((cached) => cached || fetch(request)));
+  }
 });

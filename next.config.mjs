@@ -11,6 +11,9 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'plus.unsplash.com' },
+      { protocol: 'https', hostname: 'cf.cjdropshipping.com' },
+      { protocol: 'https', hostname: 'oss-cf.cjdropshipping.com' },
+      { protocol: 'https', hostname: 'cc-west-usa.oss-us-west-1.aliyuncs.com' },
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days

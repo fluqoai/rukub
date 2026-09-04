@@ -48,7 +48,7 @@ export function CartItem({ item }: CartItemProps) {
               {item.name}
             </Link>
             <p className="mt-0.5 text-[10px] uppercase tracking-wider text-ink-300">
-              {{ women: 'راحة وتنظيم', men: 'تقنية وأمان', shared: 'أساسيات يومية' }[item.audience]}
+              {{ women: 'ترتيب وأناقة', men: 'تقنية واستعداد', shared: 'العناية اليومية' }[item.audience]}
             </p>
           </div>
           <button

@@ -24,9 +24,9 @@ const audienceGradients: Record<Product['audience'], string> = {
   shared: 'from-wood-400/15 via-linen-100 to-sage-100',
 };
 const categoryLabel: Record<Product['audience'], string> = {
-  women: 'راحة وتنظيم',
-  men: 'تقنية وأمان',
-  shared: 'أساسيات يومية',
+  women: 'ترتيب وأناقة',
+  men: 'تقنية واستعداد',
+  shared: 'العناية اليومية',
 };
 
 export function ProductCard({ product, index = 0 }: ProductCardProps) {
@@ -38,8 +38,12 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
   // Use explicit imageUrl from DB if present, else fall back to static lookup
   const explicit = (product as any).imageUrl as string | null | undefined;
-  const images = explicit ? [explicit] : getProductImages(product.id);
+  const dbImages = (product as any).imageUrls as string[] | undefined;
+  const images = dbImages?.length ? dbImages : explicit ? [explicit] : getProductImages(product.id);
   const primaryImage = images[0];
+  const secondaryImage = images[1];
+  const deliveryMin = (product as any).deliveryMinDays as number | null | undefined;
+  const deliveryMax = (product as any).deliveryMaxDays as number | null | undefined;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -74,9 +78,10 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             alt={product.name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className={cn('object-cover transition-all duration-500 group-hover:scale-105', secondaryImage && 'group-hover:opacity-0')}
             onError={() => setImageError(true)}
-            loading="lazy"
+            priority={index === 0}
+            loading={index === 0 ? undefined : 'lazy'}
           />
         ) : (
           <>
@@ -93,6 +98,17 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
               </div>
             </div>
           </>
+        )}
+
+        {!imageError && secondaryImage && (
+          <Image
+            src={secondaryImage}
+            alt={`${product.name} أثناء الاستخدام`}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover opacity-0 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
+            loading="lazy"
+          />
         )}
 
         {/* Overlay gradient on hover */}
@@ -123,6 +139,14 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
         <p className="mt-1.5 text-xs leading-relaxed text-ink-500 line-clamp-2">
           {product.tagline}
         </p>
+
+        {deliveryMax ? (
+          <p className="mt-3 text-[11px] font-medium text-sage-700">
+            التوصيل المتوقع {deliveryMin && deliveryMin !== deliveryMax ? `${deliveryMin}–${deliveryMax}` : deliveryMax} يوم عمل
+          </p>
+        ) : (
+          <p className="mt-3 text-[11px] text-ink-500">تُحدّث مدة التوصيل عند تجهيز الطلب</p>
+        )}
 
         <div className="mt-4 flex items-end justify-between">
           <div className="flex items-baseline gap-2">

@@ -19,7 +19,7 @@ const sortOptions: { key: SortOption; label: string }[] = [
 
 type Badge = NonNullable<Product['badge']>;
 
-const availableBadges: Badge[] = ['الأكثر مبيعاً', 'جديد', 'شحن سريع', 'لمسة شخصية'];
+const availableBadges: Badge[] = ['مختار لركوب', 'جديد', 'متوفر محلياً'];
 
 type SectionFiltersProps = {
   audience: Audience;

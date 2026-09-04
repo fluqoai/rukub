@@ -1,52 +1,67 @@
-// CJdropshipping API types — based on their OpenAPI 2.0 spec.
-// Reference: https://developers.cjdropshipping.com/api2.0/v1/
+// Normalized CJdropshipping types used by the store.
+// The API returns different shapes for list, detail, inventory and freight calls;
+// lib/cj-client.ts converts all of them to these stable types.
 
-export type CJCurrency = 'USD' | 'EUR' | 'CNY' | 'SAR';
-
-export type CJWarehouse = 'CN' | 'SA' | 'US' | 'DE' | 'GB' | 'HK' | 'ID';
+export type CJCurrency = 'USD' | 'SAR';
+export type CJWarehouse = string;
 
 export type CJCategory = {
-  categoryId: number;
+  categoryId: string;
   categoryName: string;
   categoryLevel: number;
-  parentCategoryId: number | null;
+  parentCategoryId: string | null;
+};
+
+export type CJInventory = {
+  countryCode: string;
+  countryName: string;
+  warehouseName: string;
+  totalInventory: number;
+  cjInventory: number;
+  factoryInventory: number;
+  verified: boolean;
 };
 
 export type CJVariant = {
-  vid: string;                 // variant id
-  name: string;                // "Black", "Red / XL"...
-  properties: string;          // "Color:Black;Size:XL"
-  price: number;               // USD
-  sellPrice?: number;          // suggested retail
+  vid: string;
+  name: string;
+  properties: string;
+  sku?: string;
+  price: number;
+  suggestedPrice?: number;
   image?: string;
   inventory: number;
-  weight: number;              // grams
+  weight: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  inventories?: CJInventory[];
 };
 
 export type CJProduct = {
   id: string;
   name: string;
-  nameAr?: string;             // not in API, optional translation
+  nameAr?: string;
   sku: string;
-  categoryId: number;
+  categoryId: string | number;
   categoryName: string;
   brand: string | null;
   description: string;
   descriptionAr?: string;
   images: string[];
-  video?: string;
-  weight: number;              // grams
-  length: number;              // cm
+  videos?: string[];
+  weight: number;
+  length: number;
   width: number;
   height: number;
   isFreeShipping: boolean;
   isInventoryWarning: boolean;
   variants: CJVariant[];
-  basePrice: number;           // USD (cheapest variant)
-  sourceUrl: string;           // original 1688/Taobao link
-  // Populated by service:
+  basePrice: number;
+  sourceUrl: string;
+  listedNum?: number;
   warehouse?: CJWarehouse;
-  inSaudiWarehouse?: boolean;
+  inSaudiWarehouse: boolean;
   shippingDaysToSA?: number;
 };
 
@@ -57,32 +72,52 @@ export type CJProductListResponse = {
   pageSize: number;
 };
 
-// Local extended product used throughout the storefront.
-// Combines CJ data + our pricing rules + Arabic translations.
+export type CJFreightQuote = {
+  originCountryCode: string;
+  destinationCountryCode: string;
+  logisticsName: string;
+  priceUSD: number;
+  deliveryMinDays: number | null;
+  deliveryMaxDays: number | null;
+  deliveryLabel: string;
+  taxesFeeUSD: number;
+  serviceFeeUSD: number;
+  currency: CJCurrency;
+};
+
+export type CJProductSnapshot = {
+  product: CJProduct;
+  inventories: CJInventory[];
+  selectedVariant: CJVariant | null;
+  freight: CJFreightQuote | null;
+  checkedAt: string;
+};
+
 export type StoreProduct = CJProduct & {
-  retailPriceSAR: number;      // our selling price
-  costPriceSAR: number;        // our cost (CJ price + shipping estimate)
-  margin: number;              // gross margin %
-  audience: 'women' | 'men' | 'shared';  // we infer from category
+  retailPriceSAR: number;
+  costPriceSAR: number;
+  margin: number;
+  audience: 'women' | 'men' | 'shared';
   audienceLabel: string;
-  arabicName: string;          // for Arabic display
+  arabicName: string;
   arabicDescription: string;
-  badge?: 'الأكثر مبيعاً' | 'جديد' | 'شحن سريع' | 'لمسة شخصية';
+  badge?: 'جديد' | 'مختار لركوب' | 'متوفر محلياً';
   rating: number;
   reviewCount: number;
   salesCount: number;
   freeShipping: boolean;
   estimatedDeliveryDays: number;
+  deliveryMinDays: number | null;
+  deliveryMaxDays: number | null;
   cjProductId: string;
 };
 
-// CJ API auth response
 export type CJAuthResponse = {
   code: number;
   result: boolean;
   message: string;
   data: {
     accessToken: string;
-    accessTokenExpiryDate: string; // ISO
+    accessTokenExpiryDate: string;
   };
 };

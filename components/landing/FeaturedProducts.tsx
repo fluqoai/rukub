@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 import { Container } from '@/components/ui/Container';
 import { FadeIn } from '@/components/motion/FadeIn';
 import { ProductCard } from './ProductCard';
-import { products, type Audience } from '@/lib/products';
+import { type Audience } from '@/lib/products';
+import type { PublicProduct } from '@/lib/public-products';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -14,18 +15,23 @@ type Filter = 'all' | Audience;
 
 const filters: { key: Filter; label: string }[] = [
   { key: 'all', label: 'مختاراتنا' },
-  { key: 'women', label: 'الراحة والتنظيم' },
-  { key: 'men', label: 'التقنية والأمان' },
-  { key: 'shared', label: 'أساسيات يومية' },
+  { key: 'women', label: 'ترتيب وأناقة' },
+  { key: 'men', label: 'تقنية واستعداد' },
+  { key: 'shared', label: 'العناية اليومية' },
 ];
 
-export function FeaturedProducts() {
+export function FeaturedProducts({ products }: { products: PublicProduct[] }) {
   useI18n();
   const [filter, setFilter] = useState<Filter>('all');
 
   const filtered = useMemo(
-    () => (filter === 'all' ? products.filter((p) => p.isHero).slice(0, 8) : products.filter((p) => p.audience === filter).slice(0, 8)),
-    [filter]
+    () => {
+      const featured = products.filter((product) => product.isHero);
+      return filter === 'all'
+        ? (featured.length ? featured : products).slice(0, 8)
+        : products.filter((product) => product.audience === filter).slice(0, 8);
+    },
+    [filter, products]
   );
 
   return (

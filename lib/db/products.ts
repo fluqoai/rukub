@@ -33,6 +33,7 @@ export type ProductCreateInput = {
   rating?: number;
   review_count?: number;
   sales_count?: number;
+  metadata?: Record<string, unknown>;
   active?: boolean;
 };
 
@@ -109,7 +110,7 @@ export async function createProduct(input: ProductCreateInput): Promise<ProductR
     rating: input.rating ?? 0,
     review_count: input.review_count ?? 0,
     sales_count: input.sales_count ?? 0,
-    metadata: {},
+    metadata: input.metadata ?? {},
     active: input.active ?? true,
   };
   const { data, error } = await (supabase.from('products') as any).insert(row).select().single();
@@ -147,6 +148,7 @@ export async function updateProduct(productId: string, updates: ProductUpdateInp
   if (updates.rating !== undefined) patch.rating = updates.rating;
   if (updates.review_count !== undefined) patch.review_count = updates.review_count;
   if (updates.sales_count !== undefined) patch.sales_count = updates.sales_count;
+  if (updates.metadata !== undefined) patch.metadata = updates.metadata;
   if (updates.active !== undefined) patch.active = updates.active;
   // Recompute margin if price or cost changed
   if (updates.price !== undefined || updates.cost !== undefined) {

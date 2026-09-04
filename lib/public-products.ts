@@ -14,6 +14,11 @@ import { products as staticProducts, type Product as StaticProduct, type Audienc
 export type PublicProduct = Omit<StaticProduct, 'icon' | 'cost'> & {
   iconName: string;       // serializable — client maps to LucideIcon
   imageUrl?: string | null;
+  imageUrls: string[];
+  deliveryMinDays?: number | null;
+  deliveryMaxDays?: number | null;
+  shippingOrigin?: string | null;
+  localInventorySA?: number;
   fromDb: boolean;
 };
 
@@ -31,6 +36,11 @@ function mapStaticToPublic(product: StaticProduct): PublicProduct {
     ...serializable,
     iconName: getIconName(icon),
     imageUrl: null,
+    imageUrls: [],
+    deliveryMinDays: null,
+    deliveryMaxDays: null,
+    shippingOrigin: null,
+    localInventorySA: 0,
     fromDb: false,
   };
 }
@@ -39,10 +49,14 @@ function mapDbToPublic(row: any): PublicProduct {
   const staticMatch = staticProducts.find((s) => s.id === row.id);
   const icon: LucideIcon = staticMatch?.icon ?? Package;
   const defaultFeatures: [string, string, string] = staticMatch?.features ?? [
-    'منتج أصلي مع ضمان',
-    'شحن سريع من المستودع',
-    'دفع آمن عند الاستلام',
+    'اختيار عملي للاستخدام اليومي',
+    'تفاصيل المنتج موضحة قبل الشراء',
+    'تحديثات الطلب تصل عبر البريد',
   ];
+  const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {};
+  const storedFeatures = Array.isArray(metadata.features) ? metadata.features.filter((item: unknown) => typeof item === 'string').slice(0, 3) : [];
+  const features = storedFeatures.length === 3 ? storedFeatures as [string, string, string] : defaultFeatures;
+  const imageUrls = Array.isArray(row.images) ? row.images.filter((image: unknown) => typeof image === 'string' && image.startsWith('https://')) : [];
   return {
     id: row.id,
     slug: staticMatch?.slug ?? row.id,
@@ -54,11 +68,16 @@ function mapDbToPublic(row: any): PublicProduct {
     iconName: getIconName(icon),
     tagline: row.tagline,
     description: row.description,
-    features: defaultFeatures,
+    features,
     badge: row.badge ?? undefined,
     tier: (row.tier as any) ?? 1,
     isHero: !!row.is_hero,
-    imageUrl: row.images?.[0] ?? null,
+    imageUrl: imageUrls[0] ?? null,
+    imageUrls,
+    deliveryMinDays: Number(metadata.delivery_min_days) || null,
+    deliveryMaxDays: Number(metadata.delivery_max_days ?? row.estimated_delivery_days) || null,
+    shippingOrigin: typeof metadata.shipping_origin === 'string' ? metadata.shipping_origin : null,
+    localInventorySA: Number(metadata.local_inventory_sa) || 0,
     fromDb: true,
   };
 }

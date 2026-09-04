@@ -4,7 +4,7 @@ import { Container } from '@/components/ui/Container';
 import { ProductCard } from '@/components/landing/ProductCard';
 import { getPublicProducts } from '@/lib/public-products';
 
-export const metadata: Metadata = { title: 'كل المنتجات', description: 'تصفح إكسسوارات السيارة المختارة للراحة والتنظيم والتقنية والأمان.' };
+export const metadata: Metadata = { title: 'كل المنتجات', description: 'تصفح إكسسوارات السيارة المختارة للترتيب والعناية والتقنية والاستعداد.' };
 
 export default async function DiscoverPage({ searchParams }: { searchParams: { q?: string } }) {
   const query = searchParams.q?.trim() || '';

@@ -37,7 +37,7 @@ export type Product = {
   tagline: string;
   description: string;
   features: [string, string, string];
-  badge?: 'الأكثر مبيعاً' | 'جديد' | 'شحن سريع' | 'لمسة شخصية';
+  badge?: 'الأكثر مبيعاً' | 'جديد' | 'شحن سريع' | 'لمسة شخصية' | 'مختار لركوب' | 'متوفر محلياً';
   tier: PriceTier;
   isHero?: boolean;
 };

@@ -17,12 +17,6 @@ type ProductInfoProps = {
   product: Product;
 };
 
-const trustItems = [
-  { icon: Truck, text: 'تحديثات واضحة للشحن' },
-  { icon: Banknote, text: 'دفع عند الاستلام' },
-  { icon: RotateCcw, text: 'سياسة إرجاع واضحة' },
-];
-
 export function ProductInfo({ product }: ProductInfoProps) {
   const [qty, setQty] = useState(1);
   const [toast, setToast] = useState<string | null>(null);
@@ -45,6 +39,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
   };
 
   const savings = product.oldPrice ? product.oldPrice - product.price : 0;
+  const deliveryMin = (product as any).deliveryMinDays as number | null | undefined;
+  const deliveryMax = (product as any).deliveryMaxDays as number | null | undefined;
+  const trustItems = [
+    { icon: Truck, text: deliveryMax ? `توصيل متوقع ${deliveryMin && deliveryMin !== deliveryMax ? `${deliveryMin}–${deliveryMax}` : deliveryMax} يوم عمل` : 'تحديثات واضحة للشحن' },
+    { icon: Banknote, text: 'خيارات دفع واضحة عند إتمام الطلب' },
+    { icon: RotateCcw, text: 'سياسة إرجاع واضحة' },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -53,7 +54,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
       {/* Audience + breadcrumb */}
       <div className="flex items-center gap-2 text-xs">
         <span className="rounded-full bg-sage-50 px-2.5 py-1 font-medium text-sage-700">
-          {{ women: 'الراحة والتنظيم', men: 'التقنية والأمان', shared: 'أساسيات يومية' }[product.audience]}
+          {{ women: 'ترتيب وأناقة', men: 'تقنية واستعداد', shared: 'العناية اليومية' }[product.audience]}
         </span>
         {product.badge && (
           <span className="rounded-full bg-wood-400/15 px-2.5 py-1 font-medium text-wood-700">

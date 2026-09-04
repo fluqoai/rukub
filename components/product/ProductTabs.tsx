@@ -16,8 +16,8 @@ const tabs = [
 ] as const;
 
 const specsData = (product: Product) => [
-  { label: 'الاستخدام', value: product.audience === 'women' ? 'الراحة والتنظيم' : product.audience === 'men' ? 'التقنية والأمان' : 'أساسيات يومية' },
-  { label: 'التوصيل', value: 'يُحدّث بعد تأكيد الطلب' },
+  { label: 'الاستخدام', value: product.audience === 'women' ? 'ترتيب وأناقة' : product.audience === 'men' ? 'تقنية واستعداد' : 'العناية اليومية' },
+  { label: 'التوصيل', value: (product as any).deliveryMaxDays ? `${(product as any).deliveryMinDays ?? (product as any).deliveryMaxDays}–${(product as any).deliveryMaxDays} يوم عمل تقريباً` : 'يُحدّث بعد تأكيد الطلب' },
   { label: 'وجهة الشحن', value: 'المملكة العربية السعودية' },
   { label: 'الإرجاع', value: 'وفق السياسة المنشورة' },
   { label: 'SKU', value: product.id.toUpperCase() },

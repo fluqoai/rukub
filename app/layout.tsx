@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import { IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from 'next/font/google';
 import { I18nProvider } from '@/lib/i18n';
 import { Header } from '@/components/landing/Header';
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     template: '%s · ركوب',
   },
   description:
-    'إكسسوارات سيارة عملية مختارة للراحة والتنظيم والتقنية والأمان في السعودية، مع الدفع عند الاستلام وتجربة شراء عربية واضحة.',
+    'إكسسوارات سيارة عملية مختارة للترتيب والعناية والتقنية والاستعداد في السعودية، مع أسعار ومدة توصيل واضحة.',
   keywords: [
     'إكسسوارات سيارات',
     'اكسسوارات سيارة',
@@ -126,10 +127,9 @@ export default function RootLayout({
           {children}
           <Footer />
         </I18nProvider>
-        {/* Service worker registration */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
+        {process.env.NODE_ENV === 'production' && (
+          <Script id="rukub-service-worker" strategy="afterInteractive">
+            {`
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').catch(function(err) {
@@ -137,9 +137,9 @@ export default function RootLayout({
                   });
                 });
               }
-            `,
-          }}
-        />
+            `}
+          </Script>
+        )}
       </body>
     </html>
   );

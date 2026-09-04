@@ -9,7 +9,7 @@ import { ProductInfo } from './ProductInfo';
 import { ProductTabs } from './ProductTabs';
 import { RelatedProducts } from './RelatedProducts';
 
-const categoryLabel = { women: 'الراحة والتنظيم', men: 'التقنية والأمان', shared: 'الأساسيات اليومية' };
+const categoryLabel = { women: 'ترتيب وأناقة', men: 'تقنية واستعداد', shared: 'العناية اليومية' };
 
 export function ProductDetail({ product }: { product: PublicProduct }) {
   return (

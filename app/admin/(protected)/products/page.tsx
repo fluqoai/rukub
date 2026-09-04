@@ -34,6 +34,7 @@ type Product = {
   rating: number;
   review_count: number;
   sales_count: number;
+  metadata: Record<string, any>;
   active: boolean;
   updated_at?: string;
 };
@@ -61,10 +62,11 @@ const emptyForm: Prefill = {
   weight: 0,
   images: [],
   free_shipping: false,
-  estimated_delivery_days: 3,
+  estimated_delivery_days: 14,
   rating: 0,
   review_count: 0,
   sales_count: 0,
+  metadata: {},
   active: true,
 };
 
@@ -263,6 +265,7 @@ export default function AdminProductsPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((p) => {
               const img = p.images?.[0];
+              const supplier = p.metadata ?? {};
               return (
                 <div
                   key={p.id}
@@ -304,6 +307,11 @@ export default function AdminProductsPage() {
                       SKU: {p.id} · تكلفة: {formatSAR(p.cost)} · هامش:{' '}
                       {p.margin ? Math.round(p.margin * 100) : Math.round(((p.price - p.cost) / p.price) * 100)}%
                     </p>
+                    {supplier.supplier === 'CJdropshipping' && (
+                      <p className="mt-1 text-[10px] leading-5 text-ink-500" dir="ltr">
+                        CJ ${Number(supplier.supplier_price_usd ?? 0).toFixed(2)} + shipping ${Number(supplier.shipping_price_usd ?? 0).toFixed(2)} · {supplier.shipping_origin ?? '—'}→SA · {supplier.delivery_min_days ?? '—'}–{supplier.delivery_max_days ?? '—'} days
+                      </p>
+                    )}
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       <button
                         type="button"
@@ -493,7 +501,7 @@ export default function AdminProductsPage() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="أيام التوصيل">
-                  <input type="number" min="1" max="30" value={form.estimated_delivery_days ?? 3} onChange={(e) => setForm({ ...form, estimated_delivery_days: Number(e.target.value) })}
+                  <input type="number" min="1" max="45" value={form.estimated_delivery_days ?? 14} onChange={(e) => setForm({ ...form, estimated_delivery_days: Number(e.target.value) })}
                     className="w-full rounded-xl border border-sage-500/20 bg-linen-50 px-3 py-2 text-sm focus:border-sage-500 focus:outline-none" dir="ltr" />
                 </Field>
                 <Field label="الوزن (غرام)">

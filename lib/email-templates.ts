@@ -138,7 +138,7 @@ export function renderEmail(
           `
             ${header('✓', 'تم تأكيد طلبك!')}
             <p style="margin:0 0 16px 0;line-height:1.7;text-align:right;">مرحباً ${ctx.customerName}،</p>
-            <p style="margin:0 0 16px 0;line-height:1.7;text-align:right;">تم تأكيد طلبك وجاري تجهيزه من المستودع. سيتم شحنه خلال 1-2 يوم عمل.</p>
+            <p style="margin:0 0 16px 0;line-height:1.7;text-align:right;">تم تأكيد طلبك وبدأنا تجهيزه. سنرسل لك رقم التتبع والمدة المحدّثة فور تسليم الشحنة للناقل.</p>
             ${summaryCard(ctx)}
             ${ctx.cjOrderId ? `<p style="margin:16px 0;color:${BRAND.muted};font-size:12px;text-align:right;">رقم الطلب في CJ: <span style="font-family:monospace;">${ctx.cjOrderId}</span></p>` : ''}
             ${cta(orderUrl, 'تتبع الطلب')}
