@@ -76,9 +76,6 @@ export function CartSummary({ showCheckoutButton = true }: CartSummaryProps) {
               {formatSAR(grandTotal)}
             </dd>
           </div>
-          <p className="mt-1 text-end text-[10px] text-ink-500">
-            شامل ضريبة القيمة المضافة 15%
-          </p>
         </div>
       </dl>
 
@@ -94,7 +91,7 @@ export function CartSummary({ showCheckoutButton = true }: CartSummaryProps) {
 
       <div className="mt-5 flex items-center justify-center gap-1.5 text-[10px] text-ink-500">
         <ShieldCheck className="h-3 w-3" strokeWidth={1.5} />
-        دفع آمن · تشفير SSL · 256-bit
+        إتمام واضح · الدفع عند الاستلام
       </div>
     </aside>
   );

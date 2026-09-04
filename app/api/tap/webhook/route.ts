@@ -58,6 +58,9 @@ export async function POST(req: NextRequest) {
 
     // Live mode → verify HMAC signature.
     const tapWebhookSecret = process.env.TAP_WEBHOOK_SECRET;
+    if (process.env.NODE_ENV === 'production' && !tapWebhookSecret) {
+      return NextResponse.json({ error: 'Webhook is not configured' }, { status: 503 });
+    }
     if (tapWebhookSecret) {
       if (!verifyTapHmac(body, signature, tapWebhookSecret)) {
         return NextResponse.json(

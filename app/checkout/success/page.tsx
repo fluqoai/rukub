@@ -8,7 +8,7 @@ import {
   Package,
   ArrowLeft,
   ArrowRight,
-  MessageCircle,
+  Mail,
   Home,
   MapPin,
   Truck,
@@ -60,7 +60,7 @@ function SuccessContent() {
   const order = useOrdersStore((s) => s.orders.find((o) => o.id === orderId));
   const hydrated = useOrdersStore((s) => s.hydrated);
 
-  // Note: notifications (email + WhatsApp) are dispatched server-side
+  // Note: email notifications are dispatched server-side
   // from /api/orders when the order is created. This page just confirms
   // to the customer — no network sends happen on the client.
 
@@ -238,11 +238,11 @@ function SuccessContent() {
               <Arrow className="h-4 w-4" strokeWidth={2} />
             </Link>
             <a
-              href="https://wa.me/966500000000"
+              href="mailto:support@rukub.shop"
               className="inline-flex items-center gap-2 rounded-full border border-sage-500/20 bg-linen-50 px-6 py-3 text-sm font-medium text-ink-700 transition-colors hover:bg-sage-50"
             >
-              <MessageCircle className="h-4 w-4" strokeWidth={1.5} />
-              تواصل عبر واتساب
+              <Mail className="h-4 w-4" strokeWidth={1.5} />
+              تواصل عبر البريد
             </a>
           </div>
         </div>

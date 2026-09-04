@@ -17,7 +17,7 @@ export async function generateMetadata({
   const product = await getPublicProduct(params.slug);
   if (!product) return { title: 'منتج غير موجود' };
   const url = `${SITE_URL}/products/${product.slug}`;
-  const imageUrl = product.imageUrl ?? `/products/${product.slug}.jpg`;
+  const imageUrl = product.imageUrl ?? '/brand/rukub-hero.png';
   return {
     title: product.name,
     description: product.tagline,
@@ -47,15 +47,15 @@ export default async function ProductPage({
 
   return (
     <>
-      <ProductJsonLd product={{ ...product, image: product.imageUrl ?? `${SITE_URL}/products/${product.slug}.jpg` } as any} />
+      <ProductJsonLd product={{ ...product, image: product.imageUrl ?? `${SITE_URL}/brand/rukub-hero.png` } as any} />
       <BreadcrumbJsonLd
         items={[
           { name: 'الرئيسية', url: SITE_URL },
-          { name: 'المتجر', url: `${SITE_URL}/#products` },
+          { name: 'المتجر', url: `${SITE_URL}/discover` },
           { name: product.name, url: `${SITE_URL}/products/${product.slug}` },
         ]}
       />
-      <ProductDetail slug={product.slug} />
+      <ProductDetail product={product} />
     </>
   );
 }

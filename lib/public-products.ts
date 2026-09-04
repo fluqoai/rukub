@@ -11,7 +11,7 @@ import { Package, type LucideIcon } from 'lucide-react';
 import { listProducts } from '@/lib/db/products';
 import { products as staticProducts, type Product as StaticProduct, type Audience } from '@/lib/products';
 
-export type PublicProduct = Omit<StaticProduct, 'icon'> & {
+export type PublicProduct = Omit<StaticProduct, 'icon' | 'cost'> & {
   iconName: string;       // serializable — client maps to LucideIcon
   imageUrl?: string | null;
   fromDb: boolean;
@@ -23,6 +23,16 @@ function getIconName(icon: LucideIcon): string {
   // Lucide icon components have a `displayName` or `name` we can read in modern bundlers.
   // Fallback to a known list of names.
   return (icon as any).displayName || (icon as any).name || 'Package';
+}
+
+function mapStaticToPublic(product: StaticProduct): PublicProduct {
+  const { icon, cost: _cost, ...serializable } = product;
+  return {
+    ...serializable,
+    iconName: getIconName(icon),
+    imageUrl: null,
+    fromDb: false,
+  };
 }
 
 function mapDbToPublic(row: any): PublicProduct {
@@ -41,7 +51,6 @@ function mapDbToPublic(row: any): PublicProduct {
     audience: row.audience as Audience,
     price: Number(row.price),
     oldPrice: row.old_price ?? undefined,
-    cost: Number(row.cost ?? 0),
     iconName: getIconName(icon),
     tagline: row.tagline,
     description: row.description,
@@ -66,7 +75,8 @@ export async function getPublicProducts(opts: { audience?: Audience | 'all'; sea
       audience: audience as any,
       search: opts.search,
     });
-    return rows.map(mapDbToPublic);
+    if (rows.length > 0) return rows.map(mapDbToPublic);
+    throw new Error('Product catalog is empty');
   } catch (e) {
     // Fall back to static if DB fails
     console.error('[public-products] DB fetch failed, using static fallback:', e);
@@ -81,7 +91,7 @@ export async function getPublicProducts(opts: { audience?: Audience | 'all'; sea
           p.tagline.toLowerCase().includes(q)
       );
     }
-    return fallback.map((p) => ({ ...p, iconName: getIconName(p.icon), fromDb: false }));
+    return fallback.map(mapStaticToPublic);
   }
 }
 
@@ -99,6 +109,6 @@ export async function getPublicProduct(idOrSlug: string): Promise<PublicProduct 
   }
   // Fallback: static by id or slug
   const staticMatch = staticProducts.find((p) => p.id === idOrSlug || p.slug === idOrSlug);
-  if (staticMatch) return { ...staticMatch, iconName: getIconName(staticMatch.icon), fromDb: false };
+  if (staticMatch) return mapStaticToPublic(staticMatch);
   return null;
 }

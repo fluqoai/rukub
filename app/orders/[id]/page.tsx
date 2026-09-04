@@ -1,289 +1,60 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import {
-  Package,
-  ArrowLeft,
-  ArrowRight,
-  Home,
-  MapPin,
-  Truck,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  ShoppingBag,
-  MessageCircle,
-  Loader2,
-  Search,
-} from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock, MapPin, Package, Search, Truck } from 'lucide-react';
 import { Container } from '@/components/ui/Container';
-import { useDbOrder } from '@/lib/hooks/useDbOrders';
-import { useI18n } from '@/lib/i18n';
+import { useOrdersStore } from '@/lib/orders-store';
 import { cn, formatSAR } from '@/lib/utils';
 
-const statusInfo: Record<string, { text: string; color: string; icon: typeof Clock; description: string }> = {
-  pending:           { text: 'بانتظار التأكيد',   color: 'bg-wood-400/15 text-wood-700',   icon: Clock,        description: 'طلبك قيد المراجعة' },
-  confirmed:         { text: 'مؤكد',               color: 'bg-sage-50 text-sage-700',        icon: CheckCircle2, description: 'تم تأكيد طلبك بنجاح' },
-  processing:        { text: 'قيد التجهيز',        color: 'bg-ink-900/8 text-ink-700',       icon: Package,      description: 'يتم تجهيز طلبك' },
-  shipped:           { text: 'تم الشحن',           color: 'bg-sage-100 text-sage-700',       icon: Truck,        description: 'طلبك في الطريق إليك' },
-  delivered:         { text: 'مسلّم',              color: 'bg-sage-100 text-sage-700',       icon: CheckCircle2, description: 'تم التوصيل بنجاح' },
-  cancelled:         { text: 'ملغي',               color: 'bg-red-50 text-red-700',          icon: AlertCircle,  description: 'تم إلغاء الطلب' },
-  pending_cj_sync:   { text: 'بانتظار المزامنة',   color: 'bg-wood-400/15 text-wood-700',   icon: Clock,        description: 'بانتظار المزامنة مع المورّد' },
-  manual_followup:   { text: 'يحتاج متابعة',       color: 'bg-orange-50 text-orange-700',    icon: AlertCircle,  description: 'سنتواصل معك لإتمام الطلب' },
-  refunded:          { text: 'مسترد',              color: 'bg-ink-900/8 text-ink-700',       icon: CheckCircle2, description: 'تم استرداد المبلغ' },
-};
-
-const paymentLabel: Record<string, string> = {
-  cod: 'الدفع عند الاستلام',
-  tap: 'بطاقة / Apple Pay (Tap)',
-  tabby: 'تقسيط Tabby (4 دفعات)',
+type SafeOrder = { id: string; status: string; payment_method: string; payment_status?: string; tracking_number?: string | null; subtotal: number; shipping_cost: number; total: number; shipping_full_name: string; shipping_city: string; shipping_district: string; placed_at: string; items?: Array<{ id?: string; product_name: string; product_short_name?: string; quantity: number; price: number; subtotal: number }> };
+const states: Record<string, { label: string; desc: string; Icon: typeof Clock; style: string }> = {
+  pending: { label: 'قيد المراجعة', desc: 'استلمنا طلبك ويجري التحقق من تفاصيله.', Icon: Clock, style: 'bg-wood-400/15 text-wood-700' },
+  confirmed: { label: 'تم التأكيد', desc: 'تم تأكيد الطلب وسيبدأ التجهيز.', Icon: CheckCircle2, style: 'bg-sage-100 text-sage-700' },
+  processing: { label: 'قيد التجهيز', desc: 'يتم تجهيز منتجات طلبك.', Icon: Package, style: 'bg-sage-100 text-sage-700' },
+  shipped: { label: 'تم الشحن', desc: 'طلبك في الطريق إليك.', Icon: Truck, style: 'bg-sage-100 text-sage-700' },
+  delivered: { label: 'تم التسليم', desc: 'اكتمل تسليم الطلب.', Icon: CheckCircle2, style: 'bg-sage-100 text-sage-700' },
+  cancelled: { label: 'ملغي', desc: 'تم إلغاء الطلب.', Icon: AlertCircle, style: 'bg-red-50 text-red-700' },
 };
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
-  const id = params.id;
-  const { locale } = useI18n();
-  const Arrow = locale === 'ar' ? ArrowLeft : ArrowRight;
-  const { order, loading, error, refetch } = useDbOrder(id);
+  const id = params.id.toUpperCase();
+  const local = useOrdersStore((state) => state.orders.find((order) => order.id === id));
+  const [phone, setPhone] = useState('');
+  const [order, setOrder] = useState<SafeOrder | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  if (loading) {
-    return (
-      <main className="py-20">
-        <Container>
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="h-7 w-7 animate-spin text-sage-500" />
-            <p className="mt-3 text-sm text-ink-500">جاري تحميل الطلب...</p>
-          </div>
-        </Container>
-      </main>
-    );
-  }
+  const localView = useMemo<SafeOrder | null>(() => local ? { id: local.id, status: local.status === 'pending_cj_sync' ? 'pending' : local.status, payment_method: local.payment, subtotal: local.subtotal, shipping_cost: local.shippingCost, total: local.total, shipping_full_name: local.shipping.fullName, shipping_city: local.shipping.city, shipping_district: local.shipping.district, placed_at: local.createdAt, tracking_number: local.trackingNumber, items: local.items.map((item) => ({ product_name: item.name, product_short_name: item.shortName, quantity: item.quantity, price: item.price, subtotal: item.price * item.quantity })) } : null, [local]);
 
-  if (error || !order) {
-    return (
-      <main className="py-20">
-        <Container>
-          <div className="mx-auto max-w-xl">
-            <div className="rounded-3xl border border-sage-500/10 bg-linen-50 p-8 text-center">
-              <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-sage-50 text-sage-500">
-                <Search className="h-7 w-7" strokeWidth={1.5} />
-              </div>
-              <h1 className="mt-4 text-xl font-semibold text-ink-900">لم يتم العثور على الطلب</h1>
-              <p className="mt-2 text-sm text-ink-500">
-                تأكد من رقم الطلب وحاول مرة أخرى. أو ابحث في صفحة طلباتي.
-              </p>
-              <p className="mt-4 font-mono text-xs text-ink-300" dir="ltr">{id}</p>
-              <div className="mt-6 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
-                <Link
-                  href="/orders"
-                  className="inline-flex items-center gap-2 rounded-full bg-sage-500 px-5 py-2.5 text-sm font-medium text-linen-50 transition-colors hover:bg-sage-600"
-                >
-                  صفحة طلباتي
-                  <Arrow className="h-4 w-4" />
-                </Link>
-                <Link
-                  href="/"
-                  className="inline-flex items-center gap-2 rounded-full border border-sage-500/20 bg-linen-50 px-5 py-2.5 text-sm font-medium text-ink-700 transition-colors hover:bg-sage-50"
-                >
-                  العودة للرئيسية
-                </Link>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </main>
-    );
-  }
+  const verify = async (candidate: string) => {
+    setLoading(true); setError('');
+    try {
+      const response = await fetch('/api/orders/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: id, phone: candidate }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || 'تعذر عرض الطلب');
+      setOrder(data.order);
+      sessionStorage.setItem(`rukub-order-phone:${id}`, candidate);
+    } catch (err) { setError(err instanceof Error ? err.message : 'تعذر عرض الطلب'); }
+    finally { setLoading(false); }
+  };
 
-  const info = statusInfo[order.status] ?? statusInfo.pending;
-  const Icon = info.icon;
-  const date = new Date(order.placed_at);
-  const dateStr = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
-  const timeStr = date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+  useEffect(() => {
+    const saved = sessionStorage.getItem(`rukub-order-phone:${id}`) || local?.shipping.phone;
+    if (saved) { setPhone(saved); void verify(saved); }
+    // The order id identifies this page; local is only used to prefill the protected lookup.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
-  return (
-    <main className="py-10 md:py-14">
-      <Container>
-        <div className="mx-auto max-w-2xl">
-          {/* Header */}
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <span className="eyebrow">تفاصيل الطلب</span>
-              <h1 className="mt-2 font-mono text-2xl font-semibold text-ink-900 md:text-3xl">
-                {order.id}
-              </h1>
-              <p className="mt-1 text-xs text-ink-500">
-                {dateStr} · {timeStr}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="inline-flex items-center gap-1.5 rounded-full border border-sage-500/20 bg-linen-50 px-3 py-1.5 text-xs font-medium text-ink-700 transition-colors hover:bg-sage-50"
-            >
-              <Loader2 className="h-3 w-3" />
-              تحديث
-            </button>
-          </div>
+  const shown = order ?? localView;
+  if (!shown) return <main className="py-20"><Container><div className="mx-auto max-w-md rounded-4xl border border-sage-500/10 bg-linen-50 p-8 text-center"><Search className="mx-auto h-8 w-8 text-sage-500" /><h1 className="mt-4 text-2xl font-semibold text-ink-900">تحقق من طلبك</h1><p className="mt-2 text-sm text-ink-500">أدخل رقم الجوال المستخدم في الطلب لحماية بياناتك.</p><form onSubmit={(e) => { e.preventDefault(); void verify(phone); }} className="mt-6 space-y-3"><input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="رقم الجوال" inputMode="tel" dir="ltr" className="h-12 w-full rounded-2xl border border-sage-500/20 bg-white px-4 text-sm outline-none focus:border-sage-500" /><button disabled={loading} className="h-12 w-full rounded-full bg-sage-500 text-sm font-medium text-white disabled:opacity-60">{loading ? 'جارٍ التحقق...' : 'عرض الطلب'}</button></form>{error && <p className="mt-3 text-xs text-red-600">{error}</p>}<Link href="/orders" className="mt-5 inline-block text-xs text-sage-600">العودة لمتابعة الطلبات</Link></div></Container></main>;
 
-          {/* Status card */}
-          <div className="rounded-3xl border border-sage-500/15 bg-linen-50 p-6">
-            <div className="flex items-center gap-3">
-              <div className={cn('flex h-12 w-12 items-center justify-center rounded-2xl', info.color)}>
-                <Icon className="h-6 w-6" strokeWidth={1.5} />
-              </div>
-              <div>
-                <p className="text-xs text-ink-500">حالة الطلب</p>
-                <p className="mt-0.5 text-base font-semibold text-ink-900">{info.text}</p>
-                <p className="mt-0.5 text-xs text-ink-500">{info.description}</p>
-              </div>
-            </div>
-
-            {/* Tracking */}
-            {(order.cj_order_id || order.tracking_number) && (
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {order.cj_order_id && (
-                  <div className="rounded-2xl bg-linen-100/50 p-3">
-                    <p className="text-[10px] uppercase tracking-wider text-ink-500">رقم الطلب عند المورّد</p>
-                    <p className="mt-1 font-mono text-sm font-semibold text-ink-900">{order.cj_order_id}</p>
-                  </div>
-                )}
-                {order.tracking_number && (
-                  <div className="rounded-2xl bg-linen-100/50 p-3">
-                    <p className="text-[10px] uppercase tracking-wider text-ink-500">رقم التتبع</p>
-                    <p className="mt-1 font-mono text-sm font-semibold text-ink-900">{order.tracking_number}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Items */}
-            <div className="mt-5 border-t border-sage-500/10 pt-4">
-              <div className="mb-2 flex items-center gap-2 text-xs text-ink-500">
-                <Package className="h-3.5 w-3.5" />
-                <span>المنتجات ({order.items?.length ?? 0})</span>
-              </div>
-              <ul className="space-y-1.5 text-sm">
-                {(order.items ?? []).map((it: any, idx: number) => (
-                  <li key={it.id ?? idx} className="flex items-center justify-between gap-3">
-                    <span className="text-ink-700">
-                      {it.quantity}× {it.product_short_name || it.product_name}
-                    </span>
-                    <span className="font-mono text-xs text-ink-500 tabular-nums">
-                      {formatSAR(it.subtotal)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Shipping */}
-            <div className="mt-5 space-y-3 border-t border-sage-500/10 pt-4 text-sm">
-              <div className="flex items-start gap-3">
-                <Home className="mt-0.5 h-4 w-4 text-ink-500" strokeWidth={1.5} />
-                <div>
-                  <p className="text-xs text-ink-500">المستلم</p>
-                  <p className="font-medium text-ink-900">{order.shipping_full_name}</p>
-                  <p className="text-xs text-ink-500" dir="ltr">{order.shipping_phone}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <MapPin className="mt-0.5 h-4 w-4 text-ink-500" strokeWidth={1.5} />
-                <div>
-                  <p className="text-xs text-ink-500">عنوان التوصيل</p>
-                  <p className="font-medium text-ink-900">
-                    {order.shipping_district}، {order.shipping_city}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <ShoppingBag className="mt-0.5 h-4 w-4 text-ink-500" strokeWidth={1.5} />
-                <div>
-                  <p className="text-xs text-ink-500">طريقة الدفع</p>
-                  <p className="font-medium text-ink-900">
-                    {paymentLabel[order.payment_method] ?? order.payment_method}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Totals */}
-            <div className="mt-5 space-y-2 border-t border-sage-500/10 pt-4 text-sm">
-              <div className="flex items-center justify-between text-ink-500">
-                <span>المجموع الفرعي</span>
-                <span className="font-mono tabular-nums">{formatSAR(order.subtotal)}</span>
-              </div>
-              <div className="flex items-center justify-between text-ink-500">
-                <span>الشحن</span>
-                <span className="font-mono tabular-nums">
-                  {order.shipping_cost === 0 ? 'مجاني' : formatSAR(order.shipping_cost)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-t border-sage-500/10 pt-2 text-base font-semibold">
-                <span className="text-ink-900">الإجمالي</span>
-                <span className="font-mono tabular-nums text-ink-900">{formatSAR(order.total)}</span>
-              </div>
-              <p className="pt-1 text-[10px] text-ink-300">* شامل ضريبة القيمة المضافة 15%</p>
-            </div>
-          </div>
-
-          {/* Timeline */}
-          <div className="mt-6 rounded-3xl bg-linen-100/50 p-6">
-            <p className="mb-4 text-xs font-medium uppercase tracking-wider text-ink-500">
-              ماذا يحدث الآن؟
-            </p>
-            <ol className="space-y-3 text-sm">
-              <Step n={1} active={['pending', 'pending_cj_sync', 'manual_followup', 'confirmed', 'processing', 'shipped', 'delivered'].includes(order.status)}>
-                تأكيد الطلب من فريقنا خلال 1-2 ساعة
-              </Step>
-              <Step n={2} active={['confirmed', 'processing', 'shipped', 'delivered'].includes(order.status)}>
-                تجهيز الطلب وشحنه من المستودع
-              </Step>
-              <Step n={3} active={['shipped', 'delivered'].includes(order.status)}>
-                التوصيل خلال 2-5 أيام عمل
-              </Step>
-              <Step n={4} active={order.status === 'delivered'}>
-                {order.payment_method === 'cod' ? 'استلام + دفع نقداً' : 'استلام الطلب'}
-              </Step>
-            </ol>
-          </div>
-
-          {/* Help */}
-          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <a
-              href="https://wa.me/966500000000"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-sage-500/20 bg-linen-50 px-5 py-2.5 text-sm font-medium text-ink-700 transition-colors hover:bg-sage-50"
-            >
-              <MessageCircle className="h-4 w-4" strokeWidth={1.5} />
-              تواصل عبر واتساب
-            </a>
-            <Link
-              href="/orders"
-              className="inline-flex items-center gap-2 rounded-full border border-sage-500/20 bg-linen-50 px-5 py-2.5 text-sm font-medium text-ink-700 transition-colors hover:bg-sage-50"
-            >
-              <Arrow className="h-4 w-4" />
-              كل طلباتي
-            </Link>
-          </div>
-        </div>
-      </Container>
-    </main>
-  );
-}
-
-function Step({ n, children, active }: { n: number; children: React.ReactNode; active?: boolean }) {
-  return (
-    <li className="flex items-start gap-3">
-      <div
-        className={cn(
-          'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full font-mono text-xs',
-          active ? 'bg-sage-500 text-linen-50' : 'bg-linen-100 text-ink-500'
-        )}
-      >
-        {active ? '✓' : n}
-      </div>
-      <span className={active ? 'font-medium text-ink-900' : 'text-ink-700'}>{children}</span>
-    </li>
-  );
+  const state = states[shown.status] ?? states.pending;
+  const StatusIcon = state.Icon;
+  return <main className="py-12 md:py-16"><Container><div className="mx-auto max-w-2xl"><div className="flex flex-wrap items-end justify-between gap-4"><div><span className="eyebrow">تفاصيل الطلب</span><h1 className="mt-2 font-mono text-2xl font-semibold text-ink-900">{shown.id}</h1><p className="mt-1 text-xs text-ink-500">{new Date(shown.placed_at).toLocaleDateString('ar-SA')}</p></div><Link href="/orders" className="inline-flex items-center gap-2 text-sm text-sage-600">متابعة طلب آخر <ArrowLeft className="h-4 w-4" /></Link></div>
+    <section className="mt-7 rounded-4xl border border-sage-500/10 bg-linen-50 p-6 md:p-8"><div className="flex items-center gap-4"><div className={cn('flex h-14 w-14 items-center justify-center rounded-2xl', state.style)}><StatusIcon className="h-7 w-7" /></div><div><p className="text-xs text-ink-500">حالة الطلب</p><h2 className="mt-1 text-xl font-semibold text-ink-900">{state.label}</h2><p className="mt-1 text-xs text-ink-500">{state.desc}</p></div></div>{shown.tracking_number && <div className="mt-5 rounded-2xl bg-sage-50 p-4"><p className="text-xs text-ink-500">رقم التتبع</p><p className="mt-1 font-mono font-semibold text-ink-900">{shown.tracking_number}</p></div>}
+    <div className="mt-6 border-t border-sage-500/10 pt-5"><h3 className="text-sm font-semibold text-ink-900">المنتجات</h3><ul className="mt-3 space-y-3">{shown.items?.map((item, index) => <li key={item.id || index} className="flex justify-between gap-4 text-sm"><span className="text-ink-700">{item.quantity}× {item.product_short_name || item.product_name}</span><span className="font-mono text-ink-500">{formatSAR(item.subtotal)}</span></li>)}</ul></div>
+    <div className="mt-6 grid gap-4 border-t border-sage-500/10 pt-5 sm:grid-cols-2"><div><p className="text-xs text-ink-500">المستلم</p><p className="mt-1 text-sm font-medium text-ink-900">{shown.shipping_full_name}</p></div><div><p className="flex items-center gap-1 text-xs text-ink-500"><MapPin className="h-3 w-3" />عنوان التوصيل</p><p className="mt-1 text-sm font-medium text-ink-900">{shown.shipping_district}، {shown.shipping_city}</p></div></div>
+    <div className="mt-6 space-y-2 border-t border-sage-500/10 pt-5 text-sm"><div className="flex justify-between text-ink-500"><span>المنتجات</span><span>{formatSAR(shown.subtotal)}</span></div><div className="flex justify-between text-ink-500"><span>الشحن</span><span>{shown.shipping_cost ? formatSAR(shown.shipping_cost) : 'مجاني'}</span></div><div className="flex justify-between border-t border-sage-500/10 pt-3 text-base font-semibold text-ink-900"><span>الإجمالي</span><span>{formatSAR(shown.total)}</span></div><p className="pt-1 text-xs text-ink-500">طريقة الدفع: الدفع عند الاستلام</p></div></section>
+    {error && <p className="mt-3 text-center text-xs text-red-600">تعذر تحديث الحالة الآن؛ نعرض النسخة المحفوظة على جهازك.</p>}</div></Container></main>;
 }

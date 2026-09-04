@@ -90,7 +90,6 @@ export function OrderSummary() {
               {formatSAR(grandTotal)}
             </dd>
           </div>
-          <p className="mt-1 text-[10px] text-ink-300">* شامل ضريبة القيمة المضافة 15%</p>
         </div>
       </dl>
     </aside>

@@ -3,8 +3,12 @@
 // POST /api/orders - create new order (also fires notifications)
 
 import { NextRequest, NextResponse } from 'next/server';
+import { randomBytes } from 'node:crypto';
 import { listOrders, createOrder, getOrder, type CreateOrderInput } from '@/lib/db/orders';
 import { sendOrderNotification } from '@/lib/notifications-service';
+import { getCurrentAdmin } from '@/lib/admin-auth-server';
+import { getPublicProduct } from '@/lib/public-products';
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from '@/lib/cart-store';
 import type { Order, OrderStatus, PaymentMethod } from '@/lib/orders-store';
 import type { CartItem } from '@/lib/cart-store';
 
@@ -12,6 +16,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const admin = await getCurrentAdmin();
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
     const sp = req.nextUrl.searchParams;
     const orders = await listOrders({
       limit: sp.get('limit') ? Number(sp.get('limit')) : undefined,
@@ -76,18 +84,77 @@ function toLocalOrder(
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as CreateOrderInput;
-    const row = await createOrder(body);
+    const body = (await req.json()) as {
+      items?: Array<{ productId?: string; quantity?: number }>;
+      shipping?: CreateOrderInput['shipping'];
+      paymentMethod?: string;
+    };
 
-    // Fire-and-forget notification dispatch (email + WhatsApp).
+    if (!body.items?.length || body.items.length > 20 || !body.shipping) {
+      return NextResponse.json({ success: false, error: 'بيانات الطلب غير مكتملة' }, { status: 400 });
+    }
+    if (body.paymentMethod !== 'cod') {
+      return NextResponse.json(
+        { success: false, error: 'الدفع الإلكتروني سيكون متاحاً قريباً. اختر الدفع عند الاستلام.' },
+        { status: 400 }
+      );
+    }
+
+    const shipping = body.shipping;
+    const phone = shipping.phone?.replace(/\s/g, '') ?? '';
+    if (
+      !shipping.fullName || shipping.fullName.trim().length < 2 ||
+      !/^(\+?966|0)?5\d{8}$/.test(phone) ||
+      !shipping.city?.trim() ||
+      !shipping.district?.trim()
+    ) {
+      return NextResponse.json({ success: false, error: 'يرجى التحقق من بيانات الشحن' }, { status: 400 });
+    }
+
+    const items = await Promise.all(body.items.map(async (item) => {
+      const product = item.productId ? await getPublicProduct(item.productId) : undefined;
+      const quantity = Number(item.quantity);
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+        throw new Error('INVALID_CART');
+      }
+      return {
+        productId: product.id,
+        productName: product.name,
+        productShortName: product.shortName,
+        quantity,
+        price: product.price,
+      };
+    }));
+    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+    const input: CreateOrderInput = {
+      id: `RKB-${randomBytes(4).toString('hex').toUpperCase()}`,
+      items,
+      shipping: {
+        fullName: shipping.fullName.trim(),
+        phone,
+        email: shipping.email?.trim() || undefined,
+        city: shipping.city.trim(),
+        district: shipping.district.trim(),
+        notes: shipping.notes?.trim() || undefined,
+      },
+      paymentMethod: 'cod',
+      subtotal,
+      shippingCost,
+      total: subtotal + shippingCost,
+      status: 'pending',
+    };
+
+    const row = await createOrder(input);
+
+    // Fire-and-forget email notification dispatch.
     // Failure here must NOT break order creation, so we don't await.
     if (row) {
-      const localOrder = toLocalOrder({ ...row, items: [] }, body);
       // Re-fetch with items so the template can list them
       void (async () => {
         try {
           const full = await getOrder(row.id);
-          const order = toLocalOrder(full, body);
+          const order = toLocalOrder(full, input);
           await sendOrderNotification({ order, trigger: 'order_created' });
         } catch (e) {
           console.error('[notifications] post-create dispatch failed:', e);
@@ -97,6 +164,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, order: row });
   } catch (error) {
+    if (error instanceof Error && error.message === 'INVALID_CART') {
+      return NextResponse.json({ success: false, error: 'تحتوي السلة على منتج أو كمية غير صالحة' }, { status: 400 });
+    }
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Unknown' },
       { status: 500 }

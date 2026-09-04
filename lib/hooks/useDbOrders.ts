@@ -1,9 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useNotificationsStore } from '@/lib/notifications-store';
-import { renderEmail } from '@/lib/email-templates';
-import { renderWhatsApp } from '@/lib/whatsapp-templates';
 
 // ==================== TYPES ====================
 export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
@@ -44,13 +41,9 @@ export type Order = {
 };
 
 export type CreateOrderInput = {
-  id: string;
   items: Array<{
     productId: string;
-    productName: string;
-    productShortName: string;
     quantity: number;
-    price: number;
   }>;
   shipping: {
     fullName: string;
@@ -60,13 +53,7 @@ export type CreateOrderInput = {
     district: string;
     notes?: string;
   };
-  paymentMethod: PaymentMethod;
-  subtotal: number;
-  shippingCost: number;
-  total: number;
-  cjOrderId?: string;
-  trackingNumber?: string;
-  status?: OrderStatus;
+  paymentMethod: 'cod';
 };
 
 // ==================== HOOKS ====================

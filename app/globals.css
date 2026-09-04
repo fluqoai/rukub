@@ -69,6 +69,10 @@
     @apply inline-flex items-center gap-1.5 text-sm font-medium text-ink-700 transition-colors hover:text-sage-600;
   }
 
+  .icon-button {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-full border border-sage-500/15 bg-linen-50 text-ink-700 transition-colors hover:bg-sage-50;
+  }
+
   /* Decorative blob — for hero background, no mouse interaction */
   .blob {
     @apply pointer-events-none absolute rounded-full opacity-60 blur-3xl;

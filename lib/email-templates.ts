@@ -42,7 +42,6 @@ const wrap = (content: string, title: string) => `
               <p style="margin:0;">ركوب · إكسسوارات سيارات مختارة للسوق السعودي</p>
               <p style="margin:8px 0 0 0;">
                 <a href="${process.env.NEXT_PUBLIC_APP_URL ?? 'https://rukub.shop'}" style="color:${BRAND.primary};text-decoration:none;">الموقع</a> ·
-                <a href="https://wa.me/966500000000" style="color:${BRAND.primary};text-decoration:none;">واتساب</a> ·
                 <a href="${process.env.NEXT_PUBLIC_APP_URL ?? 'https://rukub.shop'}/orders" style="color:${BRAND.primary};text-decoration:none;">طلباتي</a>
               </p>
             </td>
@@ -96,7 +95,6 @@ const summaryCard = (ctx: OrderEmailContext) => {
           <td style="padding:8px 0 0 0;color:${BRAND.ink};font-size:16px;font-weight:600;font-family:monospace;text-align:left;">${formatSAR(ctx.total)}</td>
         </tr>
       </table>
-      <p style="margin:12px 0 0 0;color:${BRAND.muted};font-size:10px;text-align:right;">* شامل ضريبة القيمة المضافة 15%</p>
     </td>
   </tr>
 </table>`;
@@ -157,7 +155,7 @@ export function renderEmail(
           `
             ${header('🚚', 'تم شحن طلبك!')}
             <p style="margin:0 0 16px 0;line-height:1.7;text-align:right;">مرحباً ${ctx.customerName}،</p>
-            <p style="margin:0 0 16px 0;line-height:1.7;text-align:right;">تم شحن طلبك وهو في الطريق إليك. التوصيل المتوقع خلال 2-5 أيام عمل.</p>
+            <p style="margin:0 0 16px 0;line-height:1.7;text-align:right;">تم شحن طلبك وهو في الطريق إليك. استخدم رقم التتبع لمعرفة آخر تحديث من شركة الشحن.</p>
             ${ctx.trackingNumber ? `
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F5F1EA;border-radius:16px;margin:24px 0;">
                 <tr>
@@ -173,7 +171,7 @@ export function renderEmail(
           `,
           'تم شحن طلبك'
         ),
-        text: `تم شحن طلبك #${ctx.orderId}. رقم التتبع: ${ctx.trackingNumber ?? '—'}. التوصيل خلال 2-5 أيام. تتبع: ${orderUrl}`,
+        text: `تم شحن طلبك #${ctx.orderId}. رقم التتبع: ${ctx.trackingNumber ?? '—'}. تتبع: ${orderUrl}`,
       };
 
     case 'order_delivered':

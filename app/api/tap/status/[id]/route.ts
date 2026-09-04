@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getChargeStatus } from '@/lib/tap-client';
+import { getChargeStatus, isTapConfigured } from '@/lib/tap-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +8,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!isTapConfigured()) {
+      return NextResponse.json({ success: false, error: 'Payment gateway is not available' }, { status: 503 });
+    }
     const charge = await getChargeStatus(params.id);
     return NextResponse.json({ success: true, charge });
   } catch (error) {

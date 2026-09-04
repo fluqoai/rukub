@@ -17,6 +17,8 @@ export default function robots(): MetadataRoute.Robots {
           '/privacy',
           '/terms',
           '/refund',
+          '/shipping',
+          '/complaints',
         ],
         disallow: [
           // Auth & user data

@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrder, updateOrderStatus } from '@/lib/db/orders';
+import { getCurrentAdmin } from '@/lib/admin-auth-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const admin = await getCurrentAdmin();
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
     const order = await getOrder(params.id);
     if (!order) {
       return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
@@ -31,10 +36,15 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const admin = await getCurrentAdmin();
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await req.json();
     const { status, trackingNumber, cjOrderId, cjError, paymentStatus } = body;
 
-    if (!status) {
+    const allowedStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
+    if (!status || !allowedStatuses.includes(status)) {
       return NextResponse.json(
         { success: false, error: 'status is required' },
         { status: 400 }

@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import {
   Bell,
   Mail,
-  MessageSquare,
   Search,
   CheckCircle2,
   XCircle,
@@ -12,7 +11,6 @@ import {
   Clock,
   Send,
   ChevronRight,
-  Filter,
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -22,7 +20,6 @@ import {
   useNotificationPrefs,
   type Notification,
   type NotificationTrigger,
-  type NotificationChannel,
 } from '@/lib/notifications-store';
 import { cn } from '@/lib/utils';
 
@@ -42,24 +39,22 @@ const triggerColor: Record<NotificationTrigger, string> = {
   order_cancelled: 'bg-red-100 text-red-700',
 };
 
-type Filter = 'all' | NotificationChannel;
-
 export default function AdminNotificationsPage() {
-  const notifications = useNotificationsStore((s) => s.notifications);
+  const storedNotifications = useNotificationsStore((s) => s.notifications);
+  const notifications = useMemo(
+    () => storedNotifications.filter((notification) => notification.channel === 'email'),
+    [storedNotifications]
+  );
   const hydrated = useNotificationsStore((s) => s.hydrated);
   const clearAll = useNotificationsStore((s) => s.clearAll);
   const prefs = useNotificationPrefs((s) => s.preferences);
   const setPreference = useNotificationPrefs((s) => s.setPreference);
 
-  const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Notification | null>(null);
 
   const filtered = useMemo(() => {
     let result = notifications;
-    if (filter !== 'all') {
-      result = result.filter((n) => n.channel === filter);
-    }
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -70,7 +65,7 @@ export default function AdminNotificationsPage() {
       );
     }
     return result;
-  }, [notifications, filter, search]);
+  }, [notifications, search]);
 
   const stats = useMemo(() => {
     return {
@@ -78,7 +73,6 @@ export default function AdminNotificationsPage() {
       sent: notifications.filter((n) => n.status === 'sent' || n.status === 'delivered').length,
       failed: notifications.filter((n) => n.status === 'failed').length,
       email: notifications.filter((n) => n.channel === 'email').length,
-      whatsapp: notifications.filter((n) => n.channel === 'whatsapp').length,
     };
   }, [notifications]);
 
@@ -104,8 +98,8 @@ export default function AdminNotificationsPage() {
           <StatPill label="مُرسلة" value={stats.sent} Icon={CheckCircle2} color="sage" />
           <StatPill label="فشلت" value={stats.failed} Icon={XCircle} color="red" />
           <StatPill
-            label="Email / WhatsApp"
-            value={`${stats.email} / ${stats.whatsapp}`}
+            label="البريد الإلكتروني"
+            value={stats.email}
             Icon={Mail}
             color="ink"
           />
@@ -120,7 +114,6 @@ export default function AdminNotificationsPage() {
                 <tr className="border-b border-sage-500/10 text-xs uppercase tracking-wider text-ink-500">
                   <th className="px-3 py-2 text-start font-medium">المُحفّز</th>
                   <th className="px-3 py-2 text-center font-medium">Email</th>
-                  <th className="px-3 py-2 text-center font-medium">WhatsApp</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,12 +135,6 @@ export default function AdminNotificationsPage() {
                         onChange={(v) => setPreference('email', t, v)}
                       />
                     </td>
-                    <td className="px-3 py-2 text-center">
-                      <Toggle
-                        enabled={prefs.whatsapp[t]}
-                        onChange={(v) => setPreference('whatsapp', t, v)}
-                      />
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -166,27 +153,6 @@ export default function AdminNotificationsPage() {
               placeholder="ابحث في الإشعارات..."
               className="w-full border-none bg-transparent text-sm focus:outline-none"
             />
-          </div>
-          <div className="flex gap-1.5">
-            {[
-              { key: 'all' as const, label: 'الكل' },
-              { key: 'email' as const, label: 'Email' },
-              { key: 'whatsapp' as const, label: 'WhatsApp' },
-            ].map((f) => (
-              <button
-                key={f.key}
-                type="button"
-                onClick={() => setFilter(f.key)}
-                className={cn(
-                  'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-                  filter === f.key
-                    ? 'bg-sage-500 text-linen-50'
-                    : 'bg-linen-100 text-ink-700 hover:bg-sage-50'
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
           </div>
           {notifications.length > 0 && (
             <button
@@ -243,14 +209,10 @@ export default function AdminNotificationsPage() {
                     <div
                       className={cn(
                         'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl',
-                        n.channel === 'email' ? 'bg-ink-900/8 text-ink-700' : 'bg-sage-500/10 text-sage-700'
+                        'bg-ink-900/8 text-ink-700'
                       )}
                     >
-                      {n.channel === 'email' ? (
-                        <Mail className="h-4 w-4" strokeWidth={1.5} />
-                      ) : (
-                        <MessageSquare className="h-4 w-4" strokeWidth={1.5} />
-                      )}
+                      <Mail className="h-4 w-4" strokeWidth={1.5} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
@@ -350,8 +312,6 @@ function NotificationDetailModal({
 }) {
   const date = new Date(notification.sentAt);
   const dateStr = date.toLocaleString('ar-SA');
-  const isEmail = notification.channel === 'email';
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/65 p-4 backdrop-blur-sm"
@@ -373,14 +333,14 @@ function NotificationDetailModal({
           <div
             className={cn(
               'flex h-10 w-10 items-center justify-center rounded-xl',
-              isEmail ? 'bg-ink-900/8 text-ink-700' : 'bg-sage-500/10 text-sage-700'
+              'bg-ink-900/8 text-ink-700'
             )}
           >
-            {isEmail ? <Mail className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+            <Mail className="h-5 w-5" />
           </div>
           <div>
             <p className="text-sm font-semibold text-ink-900">
-              {isEmail ? 'Email' : 'WhatsApp'} · {triggerLabel[notification.trigger]}
+              Email · {triggerLabel[notification.trigger]}
             </p>
             <p className="font-mono text-[10px] text-ink-500">
               {notification.id}
@@ -388,7 +348,7 @@ function NotificationDetailModal({
           </div>
         </div>
 
-        {isEmail && notification.subject && (
+        {notification.subject && (
           <div className="mb-3 rounded-2xl bg-linen-100/60 p-3">
             <p className="text-[10px] uppercase tracking-wider text-ink-500">الموضوع</p>
             <p className="mt-1 text-sm font-medium text-ink-900">{notification.subject}</p>

@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { unstable_noStore } from 'next/cache';
-import { listProducts } from '@/lib/db/products';
+import { getPublicProducts } from '@/lib/public-products';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -17,7 +17,9 @@ export async function GET(req: NextRequest) {
     const limit = sp.get('limit') ? Number(sp.get('limit')) : undefined;
     const isHero = sp.get('featured') === '1';
 
-    const products = await listProducts({ audience, search, limit, isHero });
+    let products = await getPublicProducts({ audience, search });
+    if (isHero) products = products.filter((product) => product.isHero);
+    if (limit) products = products.slice(0, limit);
     return NextResponse.json({ success: true, products, total: products.length });
   } catch (err) {
     return NextResponse.json(

@@ -6,49 +6,43 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://rukub.shop';
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
+  const storefrontUpdated = new Date('2026-09-04');
 
   // Static pages (storefront + legal)
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
-      lastModified: now,
+      lastModified: storefrontUpdated,
       changeFrequency: 'daily',
       priority: 1.0,
     },
     {
       url: `${SITE_URL}/shop/women`,
-      lastModified: now,
+      lastModified: storefrontUpdated,
       changeFrequency: 'daily',
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/shop/men`,
-      lastModified: now,
+      lastModified: storefrontUpdated,
       changeFrequency: 'daily',
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/shop/shared`,
-      lastModified: now,
+      lastModified: storefrontUpdated,
       changeFrequency: 'daily',
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/discover`,
-      lastModified: now,
+      lastModified: storefrontUpdated,
       changeFrequency: 'daily',
       priority: 0.8,
     },
     {
-      url: `${SITE_URL}/cart`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.3,
-    },
-    {
       url: `${SITE_URL}/search`,
-      lastModified: now,
+      lastModified: storefrontUpdated,
       changeFrequency: 'weekly',
       priority: 0.5,
     },
@@ -71,6 +65,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
+    { url: `${SITE_URL}/shipping`, lastModified: storefrontUpdated, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${SITE_URL}/complaints`, lastModified: storefrontUpdated, changeFrequency: 'yearly', priority: 0.3 },
   ];
 
   // Product pages — pull from DB (so admin-added products are indexed)
@@ -79,7 +75,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const allProducts = await getPublicProducts();
     productPages = allProducts.map((p) => ({
       url: `${SITE_URL}/products/${p.slug}`,
-      lastModified: now,
+      lastModified: storefrontUpdated,
       changeFrequency: 'weekly',
       priority: 0.7,
     }));

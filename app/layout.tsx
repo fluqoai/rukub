@@ -29,14 +29,12 @@ export const metadata: Metadata = {
     template: '%s · ركوب',
   },
   description:
-    'إكسسوارات سيارات مختارة بعناية للسوق السعودي. توصيل سريع من مستودع السعودية، دفع عند الاستلام، تقسيط Tabby. أكثر من 20 منتج بهامش ربح عالٍ.',
+    'إكسسوارات سيارة عملية مختارة للراحة والتنظيم والتقنية والأمان في السعودية، مع الدفع عند الاستلام وتجربة شراء عربية واضحة.',
   keywords: [
     'إكسسوارات سيارات',
     'اكسسوارات سيارة',
-    'دروب شيبنج السعودية',
     'car accessories Saudi Arabia',
     'car accessories KSA',
-    'قطع غيار سيارات',
     'إكسسوارات داخلية سيارة',
   ],
   authors: [{ name: 'ركوب' }],
@@ -45,10 +43,6 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false, address: false, email: false },
   alternates: {
     canonical: '/',
-    languages: {
-      ar: '/',
-      en: '/en',
-    },
   },
   openGraph: {
     type: 'website',
@@ -57,21 +51,12 @@ export const metadata: Metadata = {
     siteName: 'ركوب · Rukub',
     title: 'ركوب · إكسسوارات سيارات مختارة للسعودية',
     description:
-      'إكسسوارات سيارات مختارة بعناية للسوق السعودي. توصيل سريع، دفع عند الاستلام، تقسيط Tabby.',
-    images: [
-      {
-        url: '/og-default.png',
-        width: 1200,
-        height: 630,
-        alt: 'ركوب · إكسسوارات سيارات مختارة للسعودية',
-      },
-    ],
+      'إكسسوارات سيارة عملية مختارة للسوق السعودي، مع الدفع عند الاستلام وتجربة شراء عربية واضحة.',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'ركوب · إكسسوارات سيارات مختارة للسعودية',
-    description: 'توصيل سريع + دفع عند الاستلام + تقسيط Tabby',
-    images: ['/og-default.png'],
+    description: 'إكسسوارات عملية لسيارة أكثر ترتيباً وراحة.',
   },
   robots: {
     index: true,
@@ -85,12 +70,8 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-    ],
-    apple: '/apple-touch-icon.png',
-    shortcut: '/favicon.ico',
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    shortcut: '/icon.svg',
   },
   manifest: '/manifest.webmanifest',
   appleWebApp: {
@@ -138,10 +119,6 @@ export default function RootLayout({
       <head>
         <OrganizationJsonLd />
         <WebSiteJsonLd />
-        {/* Preconnect to external image sources */}
-        <link rel="preconnect" href="https://picsum.photos" />
-        <link rel="preconnect" href="https://fastly.picsum.photos" />
-        <link rel="dns-prefetch" href="https://picsum.photos" />
       </head>
       <body className="font-sans">
         <I18nProvider>

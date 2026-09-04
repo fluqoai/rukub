@@ -5,7 +5,6 @@ import Link from 'next/link';
 import * as Icons from 'lucide-react';
 import { useCartStore, type CartItem as CartItemType } from '@/lib/cart-store';
 import { QuantityStepper } from '@/components/ui/QuantityStepper';
-import { audienceLabel } from '@/lib/products';
 import { formatSAR } from '@/lib/utils';
 
 type CartItemProps = {
@@ -49,7 +48,7 @@ export function CartItem({ item }: CartItemProps) {
               {item.name}
             </Link>
             <p className="mt-0.5 text-[10px] uppercase tracking-wider text-ink-300">
-              {audienceLabel[item.audience]}
+              {{ women: 'راحة وتنظيم', men: 'تقنية وأمان', shared: 'أساسيات يومية' }[item.audience]}
             </p>
           </div>
           <button

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ShoppingBag, Package as PackageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { type Product, audienceLabel } from '@/lib/products';
+import { type Product } from '@/lib/products';
 import type { PublicProduct } from '@/lib/public-products';
 import { getIcon } from '@/lib/icon-map';
 import { useCartStore } from '@/lib/cart-store';
@@ -22,6 +22,11 @@ const audienceGradients: Record<Product['audience'], string> = {
   women: 'from-sage-100 via-linen-100 to-wood-400/10',
   men: 'from-sage-200 via-linen-100 to-ink-900/5',
   shared: 'from-wood-400/15 via-linen-100 to-sage-100',
+};
+const categoryLabel: Record<Product['audience'], string> = {
+  women: 'راحة وتنظيم',
+  men: 'تقنية وأمان',
+  shared: 'أساسيات يومية',
 };
 
 export function ProductCard({ product, index = 0 }: ProductCardProps) {
@@ -46,7 +51,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
       shortName: product.shortName,
       price: product.price,
       audience: product.audience,
-      iconName: (product.icon as unknown as { displayName?: string }).displayName ?? 'Package',
+      iconName: (product as any).iconName ?? (product as any).icon?.displayName ?? 'Package',
     });
     setToast(`تمت إضافة "${product.shortName}" للسلة`);
   };
@@ -105,7 +110,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
         {/* Audience tag */}
         <div className="absolute start-3 top-3">
           <span className="inline-flex items-center rounded-full bg-ink-900/65 px-2.5 py-1 text-[10px] font-medium text-linen-50 backdrop-blur-sm">
-            {audienceLabel[product.audience]}
+            {categoryLabel[product.audience]}
           </span>
         </div>
       </div>

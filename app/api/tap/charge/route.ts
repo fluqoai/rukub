@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createCharge, isTapConfigured } from '@/lib/tap-client';
-import { createMockCharge } from '@/lib/tap-mock-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +18,12 @@ type CreateChargeBody = {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isTapConfigured()) {
+      return NextResponse.json(
+        { success: false, error: 'الدفع الإلكتروني سيكون متاحاً بعد اعتماد بوابة الدفع.' },
+        { status: 503 }
+      );
+    }
     const body = (await req.json()) as CreateChargeBody;
 
     // Validation
@@ -73,21 +78,6 @@ export async function POST(req: NextRequest) {
     };
 
     const result = await createCharge(payload);
-
-    // Save mock charge if in mock mode
-    if (!isTapConfigured()) {
-      createMockCharge({
-        id: result.id,
-        amount: body.amount,
-        currency: 'SAR',
-        customer: {
-          first_name: body.customer.first_name,
-          email: body.customer.email ?? '',
-          phone: body.customer.phone,
-        },
-        reference: { order: body.orderId },
-      });
-    }
 
     return NextResponse.json({
       success: true,

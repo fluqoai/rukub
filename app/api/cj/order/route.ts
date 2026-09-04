@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createOrder } from '@/lib/cj-client';
 import { getCJStatus } from '@/lib/cj-service';
+import { getCurrentAdmin } from '@/lib/admin-auth-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,10 @@ type CreateOrderBody = {
 
 export async function POST(req: NextRequest) {
   try {
+    const admin = await getCurrentAdmin();
+    if (!admin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
     const body = (await req.json()) as CreateOrderBody;
 
     // Basic validation
@@ -61,4 +66,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

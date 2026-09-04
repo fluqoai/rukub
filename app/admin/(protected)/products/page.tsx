@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Package, Plus, Search, Trash2, Edit3, X, Download, ImageIcon, Eye, EyeOff,
   Save, Loader2, ExternalLink, AlertCircle,
@@ -84,7 +84,7 @@ export default function AdminProductsPage() {
   const [cjLoading, setCjLoading] = useState(false);
   const [cjError, setCjError] = useState<string | null>(null);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -97,9 +97,9 @@ export default function AdminProductsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [includeInactive]);
 
-  useEffect(() => { fetchProducts(); }, [includeInactive]);
+  useEffect(() => { void fetchProducts(); }, [fetchProducts]);
 
   const filtered = products.filter((p) => {
     if (!search.trim()) return true;

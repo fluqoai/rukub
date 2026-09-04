@@ -1,11 +1,10 @@
 // High-level service that orchestrates notifications.
-// Reads preferences, sends via Email/WhatsApp, logs to store.
+// Reads preferences and sends order updates by email.
 
 import 'server-only';
 import { sendOrderEmail } from './email-client';
-import { sendOrderWhatsApp } from './whatsapp-client';
 import type { Order } from './orders-store';
-import { defaultPreferences, type NotificationTrigger, type NotificationChannel } from './notifications-types';
+import { defaultPreferences, type NotificationTrigger } from './notifications-types';
 
 const TRIGGER_MAP: Record<string, NotificationTrigger> = {
   confirmed: 'order_confirmed',
@@ -25,12 +24,11 @@ const TRIGGER_TO_STATUS: Record<NotificationTrigger, Order['status']> = {
 export type SendNotificationParams = {
   order: Order;
   trigger: NotificationTrigger;
-  customPreferences?: { email?: boolean; whatsapp?: boolean };
+  customPreferences?: { email?: boolean };
 };
 
 export type NotificationResult = {
   email: { sent: boolean; id?: string; error?: string } | null;
-  whatsapp: { sent: boolean; id?: string; error?: string } | null;
 };
 
 export async function sendOrderNotification(
@@ -38,13 +36,9 @@ export async function sendOrderNotification(
 ): Promise<NotificationResult> {
   const { order, trigger, customPreferences } = params;
 
-  // Check preferences (default: send email on all, WhatsApp on confirmation+)
-  const prefs = customPreferences ?? {
-    email: defaultPreferences.email[trigger],
-    whatsapp: defaultPreferences.whatsapp[trigger],
-  };
+  const emailEnabled = customPreferences?.email ?? defaultPreferences.email[trigger];
 
-  const result: NotificationResult = { email: null, whatsapp: null };
+  const result: NotificationResult = { email: null };
 
   const itemsForTemplate = order.items.map((it) => ({
     name: it.shortName,
@@ -70,7 +64,7 @@ export async function sendOrderNotification(
   };
 
   // Email
-  if (prefs.email && order.shipping.email) {
+  if (emailEnabled && order.shipping.email) {
     const emailResult = await sendOrderEmail(trigger, {
       ...commonCtx,
       to: order.shipping.email,
@@ -79,19 +73,6 @@ export async function sendOrderNotification(
       sent: emailResult.status === 'sent',
       id: emailResult.id,
       error: emailResult.error,
-    };
-  }
-
-  // WhatsApp
-  if (prefs.whatsapp && order.shipping.phone) {
-    const waResult = await sendOrderWhatsApp(trigger, {
-      ...commonCtx,
-      to: order.shipping.phone,
-    });
-    result.whatsapp = {
-      sent: waResult.status === 'sent',
-      id: waResult.id,
-      error: waResult.error,
     };
   }
 

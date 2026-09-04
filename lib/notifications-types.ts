@@ -25,9 +25,9 @@ export const defaultPreferences: NotificationPreferences = {
   },
   whatsapp: {
     order_created: false,
-    order_confirmed: true,
-    order_shipped: true,
-    order_delivered: true,
-    order_cancelled: true,
+    order_confirmed: false,
+    order_shipped: false,
+    order_delivered: false,
+    order_cancelled: false,
   },
 };

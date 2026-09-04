@@ -16,11 +16,10 @@ const tabs = [
 ] as const;
 
 const specsData = (product: Product) => [
-  { label: 'الفئة', value: product.audience === 'women' ? 'نسائي' : product.audience === 'men' ? 'رجالي' : 'مشترك' },
-  { label: 'المستوى السعري', value: `الفئة ${product.tier}` },
-  { label: 'التوصيل المتوقع', value: '2-5 أيام' },
-  { label: 'بلد الشحن', value: 'المملكة العربية السعودية' },
-  { label: 'الضمان', value: 'استبدال خلال 14 يوم' },
+  { label: 'الاستخدام', value: product.audience === 'women' ? 'الراحة والتنظيم' : product.audience === 'men' ? 'التقنية والأمان' : 'أساسيات يومية' },
+  { label: 'التوصيل', value: 'يُحدّث بعد تأكيد الطلب' },
+  { label: 'وجهة الشحن', value: 'المملكة العربية السعودية' },
+  { label: 'الإرجاع', value: 'وفق السياسة المنشورة' },
   { label: 'SKU', value: product.id.toUpperCase() },
 ];
 
@@ -127,18 +126,18 @@ export function ProductTabs({ product }: ProductTabsProps) {
               <div>
                 <h3 className="text-lg font-semibold text-ink-900">الشحن</h3>
                 <ul className="mt-4 space-y-2 text-sm text-ink-700">
-                  <li>• توصيل خلال 2-5 أيام عمل من مستودع السعودية</li>
-                  <li>• شحن مجاني للطلبات فوق 199 ريال</li>
+                  <li>• المدة تعتمد على توفر المنتج والمدينة</li>
+                  <li>• شحن مجاني للطلبات بقيمة 199 ريال فأكثر</li>
                   <li>• تتبع الطلب عبر رقم الجوال</li>
-                  <li>• توصيل لجميع مدن المملكة</li>
+                  <li>• تظهر المدن المدعومة أثناء إتمام الطلب</li>
                 </ul>
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-ink-900">الإرجاع والضمان</h3>
                 <ul className="mt-4 space-y-2 text-sm text-ink-700">
-                  <li>• إرجاع مجاني خلال 14 يوم من الاستلام</li>
+                  <li>• الاستبدال والاسترجاع وفق السياسة المنشورة</li>
                   <li>• ضمان استبدال في حال وجود عيب مصنعي</li>
-                  <li>• تواصل مع خدمة العملاء خلال ساعة على واتساب</li>
+                  <li>• تواصل كتابي عبر support@rukub.shop</li>
                 </ul>
               </div>
             </div>

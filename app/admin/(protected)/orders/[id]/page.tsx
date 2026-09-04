@@ -28,7 +28,6 @@ import { AdminHeader } from '@/components/admin/AdminHeader';
 import { useDbOrder, updateDbOrder, type OrderStatus as DbStatus } from '@/lib/hooks/useDbOrders';
 import {
   useNotificationsStore,
-  useNotificationPrefs,
   type NotificationTrigger,
 } from '@/lib/notifications-store';
 import { useI18n } from '@/lib/i18n';
@@ -109,7 +108,7 @@ export default function AdminOrderDetailPage({
   const [saving, setSaving] = useState(false);
   const [trackingInput, setTrackingInput] = useState('');
   const [sendingNotif, setSendingNotif] = useState(false);
-  const [lastNotif, setLastNotif] = useState<{ trigger: NotificationTrigger; email?: any; whatsapp?: any } | null>(null);
+  const [lastNotif, setLastNotif] = useState<{ trigger: NotificationTrigger; email?: any } | null>(null);
 
   useEffect(() => {
     if (dbOrder?.tracking_number) {
@@ -208,21 +207,7 @@ export default function AdminOrderDetailPage({
           sentAt: data.sentAt,
         });
       }
-      if (data.whatsapp?.sent && order.shipping.phone) {
-        addNotification({
-          id: data.whatsapp.id || `wa_${Date.now()}`,
-          orderId: order.id,
-          channel: 'whatsapp',
-          trigger,
-          recipient: order.shipping.phone,
-          body: '',
-          status: data.whatsapp.sent ? 'sent' : 'failed',
-          provider: 'mock',
-          error: data.whatsapp.error,
-          sentAt: data.sentAt,
-        });
-      }
-      setLastNotif({ trigger, email: data.email, whatsapp: data.whatsapp });
+      setLastNotif({ trigger, email: data.email });
       setTimeout(() => setLastNotif(null), 5000);
     } catch (e) {
       setLastNotif({ trigger, email: { sent: false, error: e instanceof Error ? e.message : 'Unknown' } });
@@ -358,13 +343,13 @@ export default function AdminOrderDetailPage({
               <span
                 className={cn(
                   'inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium',
-                  lastNotif.email?.sent || lastNotif.whatsapp?.sent
+                  lastNotif.email?.sent
                     ? 'bg-sage-100 text-sage-700'
                     : 'bg-red-50 text-red-700'
                 )}
               >
                 <CheckCircle2 className="h-3 w-3" />
-                {lastNotif.email?.sent || lastNotif.whatsapp?.sent
+                {lastNotif.email?.sent
                   ? `تم إرسال ${lastNotif.trigger}`
                   : `فشل: ${lastNotif.email?.error ?? 'غير معروف'}`}
               </span>

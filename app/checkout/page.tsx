@@ -67,66 +67,20 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async (method: PaymentOption) => {
     if (!info) return;
+    if (method !== 'cod') {
+      setSubmitError('الدفع الإلكتروني سيكون متاحاً بعد اعتماد بوابة الدفع.');
+      return;
+    }
     setSubmitting(true);
     setSubmitError(null);
 
-    const localId = `RKB-${Date.now().toString().slice(-6)}`;
-
-    // Build CJ order payload
-    const cjProducts = items.map((it) => ({
-      cjProductId: it.productId,
-      quantity: it.quantity,
-    }));
-
-    const shippingPayload = {
-      name: info.fullName,
-      phone: info.phone,
-      country: 'SA',
-      province: info.city,
-      city: info.city,
-      address: `${info.district}${info.notes ? ' — ' + info.notes : ''}`,
-    };
-
-    // For COD: create order at CJ first
-    let cjOrderId: string | undefined;
-    let trackingNumber: string | undefined;
-    let cjError: string | undefined;
-    let status: Order['status'] = method === 'cod' ? 'confirmed' : 'pending_cj_sync';
-
-    try {
-      const res = await fetch('/api/cj/order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          products: cjProducts,
-          shipping: shippingPayload,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'فشل إنشاء الطلب');
-      }
-
-      cjOrderId = data.orderId;
-      trackingNumber = data.trackingNumber;
-    } catch (err) {
-      cjError = err instanceof Error ? err.message : 'Unknown error';
-      status = 'manual_followup';
-    }
-
-    // 1. Save to Supabase DB via API
-    let dbOrderId: string | undefined;
+    // Save a server-validated order. Product names, prices and totals are
+    // recalculated on the server so they cannot be changed in the browser.
     try {
       const dbOrder = await createDbOrder({
-        id: localId,
         items: items.map((it) => ({
           productId: it.productId,
-          productName: it.name,
-          productShortName: it.shortName,
           quantity: it.quantity,
-          price: it.price,
         })),
         shipping: {
           fullName: info.fullName,
@@ -136,73 +90,27 @@ export default function CheckoutPage() {
           district: info.district,
           notes: info.notes || undefined,
         },
-        paymentMethod: method,
-        subtotal,
-        shippingCost,
-        total,
-        cjOrderId,
-        trackingNumber,
-        status: status === 'confirmed' ? 'confirmed' : 'pending',
+        paymentMethod: 'cod',
       });
-      dbOrderId = dbOrder.id;
-    } catch (err) {
-      console.error('DB save failed:', err);
-      // Continue with localStorage fallback
-    }
 
-    // 2. Save the order locally as well (for offline/quick access)
-    const order: Order = {
-      id: localId,
-      cjOrderId,
-      trackingNumber,
-      status,
-      items: [...items],
-      shipping: info,
-      payment: method,
-      subtotal,
-      shippingCost,
-      total,
-      createdAt: new Date().toISOString(),
-      cjError,
-    };
-    addOrder(order);
-    sessionStorage.setItem('rukub-last-order', JSON.stringify(order));
-
-    // 3. Initial notification (email + WhatsApp) is dispatched server-side
-    //    by POST /api/orders. The response from createDbOrder above already
-    //    triggered the dispatch — no client-side send needed.
-
-    // Route based on payment method
-    if (method === 'cod') {
+      const order: Order = {
+        id: dbOrder.id,
+        status: 'pending_cj_sync',
+        items: [...items],
+        shipping: info,
+        payment: 'cod',
+        subtotal: Number(dbOrder.subtotal),
+        shippingCost: Number(dbOrder.shipping_cost),
+        total: Number(dbOrder.total),
+        createdAt: dbOrder.placed_at,
+      };
+      addOrder(order);
+      sessionStorage.setItem('rukub-last-order', JSON.stringify(order));
       clear();
-      router.push(`/orders/${localId}?success=1`);
-    } else if (method === 'tap') {
-      try {
-        const tapRes = await fetch('/api/tap/charge', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: total,
-            currency: 'SAR',
-            orderId: localId,
-            customer: {
-              first_name: info.fullName.split(' ')[0],
-              last_name: info.fullName.split(' ').slice(1).join(' ') || undefined,
-              email: info.email || undefined,
-              phone: info.phone,
-            },
-            description: `طلب ركوب #${localId}`,
-          }),
-        });
-        const tapData = await tapRes.json();
-        if (!tapRes.ok || !tapData.success) {
-          throw new Error(tapData.error || 'فشل إنشاء جلسة الدفع');
-        }
-        router.push(tapData.redirectUrl);
-      } catch (err) {
-        setSubmitError(err instanceof Error ? err.message : 'فشل الدفع');
-        setSubmitting(false);
-      }
+      router.push(`/orders/${dbOrder.id}?success=1`);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'تعذر إنشاء الطلب. حاول مرة أخرى.');
+      setSubmitting(false);
     }
   };
 
@@ -213,7 +121,7 @@ export default function CheckoutPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-semibold text-ink-900">إتمام الطلب</h1>
           <p className="mt-2 text-sm text-ink-500">
-            خطوة بخطوة — كل شيء مشفّر وآمن
+            خطوتان واضحتان لتأكيد بيانات التوصيل وطريقة الدفع
           </p>
         </div>
 
@@ -269,7 +177,7 @@ export default function CheckoutPage() {
                   جارٍ إنشاء طلبك...
                 </p>
                 <p className="mt-1 text-xs text-ink-500">
-                  نتواصل مع CJdropshipping لمعالجة طلبك
+                  نتحقق من تفاصيل الطلب ونحفظه بأمان
                 </p>
               </div>
             ) : step === 'info' ? (
@@ -288,15 +196,15 @@ export default function CheckoutPage() {
             <div className="mt-4 grid grid-cols-2 gap-2 text-[10px] text-ink-500">
               <div className="flex items-center gap-1.5 rounded-lg bg-linen-100/60 px-3 py-2">
                 <Lock className="h-3 w-3" strokeWidth={1.5} />
-                دفع مشفّر
+                بياناتك محمية
               </div>
               <div className="flex items-center gap-1.5 rounded-lg bg-linen-100/60 px-3 py-2">
                 <Truck className="h-3 w-3" strokeWidth={1.5} />
-                شحن خلال 2-5 أيام
+                تتبع واضح للطلب
               </div>
               <div className="col-span-2 flex items-center gap-1.5 rounded-lg bg-linen-100/60 px-3 py-2">
                 <MessageCircle className="h-3 w-3" strokeWidth={1.5} />
-                دعم بالعربية على واتساب
+                دعم باللغة العربية
               </div>
             </div>
           </div>

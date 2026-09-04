@@ -1,5 +1,5 @@
 // Manual notification trigger.
-// Admin can call this from the order detail page to (re-)send an email/WhatsApp
+// Admin can call this from the order detail page to (re-)send an email
 // to the customer for a specific trigger (e.g. "order_shipped" after adding tracking).
 //
 // Requires admin session. Fetches the order from Supabase, then dispatches via
@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 type Body = {
   orderId: string;
   trigger: NotificationTrigger;
-  channels?: { email?: boolean; whatsapp?: boolean };
+  channels?: { email?: boolean };
 };
 
 function toLocalOrder(row: NonNullable<Awaited<ReturnType<typeof getOrder>>>): Order {
@@ -87,9 +87,9 @@ export async function POST(req: NextRequest) {
     if (!row) {
       return NextResponse.json({ success: false, error: 'الطلب غير موجود' }, { status: 404 });
     }
-    if (!row.shipping_email && !row.shipping_phone) {
+    if (!row.shipping_email) {
       return NextResponse.json(
-        { success: false, error: 'لا توجد وسيلة تواصل مع العميل' },
+        { success: false, error: 'لا يوجد بريد إلكتروني للعميل' },
         { status: 400 }
       );
     }
@@ -107,7 +107,6 @@ export async function POST(req: NextRequest) {
       sentBy: admin.email,
       sentAt: new Date().toISOString(),
       email: result.email,
-      whatsapp: result.whatsapp,
     });
   } catch (err) {
     return NextResponse.json(

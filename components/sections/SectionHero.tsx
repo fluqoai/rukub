@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Sparkles, Wrench, Users, ChevronLeft, ChevronRight, Package, Tag, Layers } from 'lucide-react';
+import { Sparkles, Wrench, Users, ChevronLeft, ChevronRight, Package, CheckCircle2, RotateCcw } from 'lucide-react';
 import { type Audience } from '@/lib/products';
 import type { PublicProduct } from '@/lib/public-products';
 import { useI18n } from '@/lib/i18n';
@@ -24,31 +24,31 @@ const sectionConfig: Record<Audience, {
   eyebrow: string;
 }> = {
   women: {
-    title: 'للنساء',
-    subtitle: 'سيارتك، مساحتك الخاصة',
+    title: 'الراحة والتنظيم',
+    subtitle: 'مساحة أهدأ في كل رحلة',
     description: 'اكسسوارات مدروسة للراحة، التنظيم، والذوق الشخصي — لأن سيارتك امتداد لذوقك.',
     Icon: Sparkles,
     bg: 'from-sage-100 via-linen-50 to-wood-400/15',
     accent: 'sage',
-    eyebrow: 'قسم نسائي',
+    eyebrow: 'اختيارات منظمة',
   },
   men: {
-    title: 'للرجال',
-    subtitle: 'أداؤها، تقنيتها',
+    title: 'التقنية والأمان',
+    subtitle: 'تجهيزات ذكية للطريق',
     description: 'كل ما يحتاجه السائق العصري: تقنية متقدمة، أمان أعلى، وأداء محسّن. مصنّف حسب احتياجك.',
     Icon: Wrench,
     bg: 'from-ink-900/5 via-linen-50 to-sage-200',
     accent: 'ink',
-    eyebrow: 'قسم رجالي',
+    eyebrow: 'تقنية مفيدة',
   },
   shared: {
-    title: 'مشترك',
-    subtitle: 'الأساسيات',
+    title: 'أساسيات يومية',
+    subtitle: 'أشياء صغيرة تصنع فرقاً',
     description: 'منتجات عملية يحتاجها كل سائق. من تنظيم المقاعد إلى معطرات الجو، الأساسيات بلا تنازل.',
     Icon: Users,
     bg: 'from-wood-400/15 via-linen-50 to-sage-100',
     accent: 'wood',
-    eyebrow: 'قسم مشترك',
+    eyebrow: 'لكل سيارة',
   },
 };
 
@@ -125,19 +125,19 @@ export function SectionHero({ audience, products }: SectionHeroProps) {
                 label="منتج مختار"
               />
               <StatCard
-                Icon={Tag}
-                value="60%"
-                label="هامش ربح"
+                Icon={CheckCircle2}
+                value="واضح"
+                label="وصف المنتج"
               />
               <StatCard
-                Icon={Layers}
-                value="20+"
-                label="باندل متوفر"
+                Icon={RotateCcw}
+                value="معلنة"
+                label="سياسة الإرجاع"
               />
               <StatCard
                 Icon={config.Icon}
-                value="2-5"
-                label="أيام توصيل"
+                value="COD"
+                label="دفع عند الاستلام"
               />
             </div>
           </FadeIn>

@@ -51,7 +51,7 @@ ${ctx.cjOrderId ? `رقم CJ: ${ctx.cjOrderId}\n` : ''}
 
 رقم الطلب: *${ctx.orderId}*
 ${ctx.trackingNumber ? `رقم التتبع: *${ctx.trackingNumber}*\n` : ''}
-طلبك في الطريق إليك. التوصيل المتوقع: 2-5 أيام عمل.
+طلبك في الطريق إليك. استخدم رقم التتبع لمعرفة آخر تحديث.
 
 تتبع: rukub.shop/orders/${ctx.orderId}`;
 

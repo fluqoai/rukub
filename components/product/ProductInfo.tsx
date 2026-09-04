@@ -3,21 +3,13 @@
 import { useState } from 'react';
 import {
   ShoppingBag,
-  Heart,
-  Share2,
   Truck,
   Banknote,
   RotateCcw,
-  Shield,
-  Check,
-  Plus,
-  Minus,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { type Product, audienceLabel } from '@/lib/products';
+import { type Product } from '@/lib/products';
 import { useCartStore } from '@/lib/cart-store';
 import { QuantityStepper } from '@/components/ui/QuantityStepper';
-import { ProductVariants } from './ProductVariants';
 import { Toast } from '@/components/ui/Toast';
 import { formatSAR } from '@/lib/utils';
 
@@ -26,10 +18,9 @@ type ProductInfoProps = {
 };
 
 const trustItems = [
-  { icon: Truck, text: 'شحن خلال 2-5 أيام' },
+  { icon: Truck, text: 'تحديثات واضحة للشحن' },
   { icon: Banknote, text: 'دفع عند الاستلام' },
-  { icon: RotateCcw, text: 'إرجاع خلال 14 يوم' },
-  { icon: Shield, text: 'ضمان استبدال' },
+  { icon: RotateCcw, text: 'سياسة إرجاع واضحة' },
 ];
 
 export function ProductInfo({ product }: ProductInfoProps) {
@@ -46,7 +37,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
         shortName: product.shortName,
         price: product.price,
         audience: product.audience,
-        iconName: product.icon.displayName ?? 'Package',
+        iconName: (product as any).iconName ?? (product as any).icon?.displayName ?? 'Package',
       },
       qty
     );
@@ -62,7 +53,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
       {/* Audience + breadcrumb */}
       <div className="flex items-center gap-2 text-xs">
         <span className="rounded-full bg-sage-50 px-2.5 py-1 font-medium text-sage-700">
-          {audienceLabel[product.audience]}
+          {{ women: 'الراحة والتنظيم', men: 'التقنية والأمان', shared: 'أساسيات يومية' }[product.audience]}
         </span>
         {product.badge && (
           <span className="rounded-full bg-wood-400/15 px-2.5 py-1 font-medium text-wood-700">
@@ -86,29 +77,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </p>
       </div>
 
-      {/* Rating summary (compact) */}
-      <div className="flex items-center gap-2 text-sm">
-        <div className="flex items-center gap-0.5 text-wood-500">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <svg
-              key={i}
-              viewBox="0 0 24 24"
-              fill={i < 4 ? 'currentColor' : 'none'}
-              stroke="currentColor"
-              strokeWidth="1.5"
-              className="h-3.5 w-3.5"
-              opacity={i === 4 ? 0.4 : 1}
-            >
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-          ))}
-        </div>
-        <span className="font-mono text-ink-900">4.8</span>
-        <span className="text-ink-500">· 128 تقييم</span>
-        <span className="text-ink-300">|</span>
-        <span className="text-ink-500">+2,300 مبيعات</span>
-      </div>
-
       {/* Price */}
       <div className="flex items-end gap-3 border-y border-sage-500/10 py-5">
         <span className="font-mono text-4xl font-semibold tabular-nums text-ink-900">
@@ -126,9 +94,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
         )}
       </div>
 
-      {/* Variants */}
-      <ProductVariants product={product} />
-
       {/* Quantity + Add */}
       <div className="flex items-center gap-3">
         <QuantityStepper value={qty} onChange={setQty} />
@@ -139,23 +104,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
         >
           <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
           <span>أضف للسلة — {formatSAR(product.price * qty)}</span>
-        </button>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-sage-500/20 bg-linen-50 px-4 py-2.5 text-sm font-medium text-ink-700 transition-colors hover:bg-sage-50"
-        >
-          <Heart className="h-4 w-4" strokeWidth={1.5} />
-          مفضلة
-        </button>
-        <button
-          type="button"
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-sage-500/20 bg-linen-50 px-4 py-2.5 text-sm font-medium text-ink-700 transition-colors hover:bg-sage-50"
-        >
-          <Share2 className="h-4 w-4" strokeWidth={1.5} />
-          مشاركة
         </button>
       </div>
 

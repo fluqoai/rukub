@@ -32,7 +32,7 @@ const methods: Array<{
   {
     key: 'tap',
     title: 'بطاقة / Apple Pay',
-    desc: 'ادفع بـ Visa / Mastercard / مدى / Apple Pay — مشفّر وآمن',
+    desc: 'قريباً — بانتظار اعتماد بوابة الدفع',
     Icon: CreditCard,
   },
 ];
@@ -63,11 +63,13 @@ export function PaymentMethod({ onBack, onPlaceOrder }: PaymentMethodProps) {
       <div className="space-y-3">
         {methods.map((m) => {
           const active = selected === m.key;
+          const disabled = m.key === 'tap';
           return (
             <label
               key={m.key}
               className={cn(
-                'group relative flex cursor-pointer items-start gap-3 rounded-2xl border bg-linen-50 p-4 transition-colors',
+                'group relative flex items-start gap-3 rounded-2xl border bg-linen-50 p-4 transition-colors',
+                disabled ? 'cursor-not-allowed opacity-55' : 'cursor-pointer',
                 active
                   ? 'border-sage-500 bg-sage-50/40 ring-1 ring-sage-500/30'
                   : 'border-sage-500/15 hover:border-sage-500/30'
@@ -78,6 +80,7 @@ export function PaymentMethod({ onBack, onPlaceOrder }: PaymentMethodProps) {
                 name="payment"
                 value={m.key}
                 checked={active}
+                disabled={disabled}
                 onChange={() => setSelected(m.key)}
                 className="sr-only"
               />

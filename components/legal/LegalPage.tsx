@@ -24,7 +24,7 @@ export function LegalPage({ title, subtitle, lastUpdated, sections, toc = true }
     <main className="bg-linen-50/40 py-12 md:py-20">
       <Container className="max-w-3xl">
         <header className="mb-10 border-b border-sage-500/10 pb-8">
-          <span className="eyebrow">ركوب · Legal</span>
+          <span className="eyebrow">ركوب · السياسات</span>
           <h1 className="mt-3 text-3xl font-semibold text-ink-900 md:text-4xl">{title}</h1>
           <p className="mt-3 text-base text-ink-500">{subtitle}</p>
           <p className="mt-4 text-[10px] text-ink-300">آخر تحديث: {lastUpdated}</p>
@@ -85,10 +85,6 @@ export function LegalPage({ title, subtitle, lastUpdated, sections, toc = true }
             لأي استفسار:{' '}
             <a href="mailto:support@rukub.shop" className="text-sage-600 hover:text-sage-700" dir="ltr">
               support@rukub.shop
-            </a>
-            {' · '}
-            <a href="https://wa.me/966500000000" className="text-sage-600 hover:text-sage-700" dir="ltr">
-              +966 5X XXX XXXX
             </a>
           </p>
         </footer>

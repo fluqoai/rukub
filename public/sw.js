@@ -1,7 +1,7 @@
 // Rukub Service Worker
 // Basic offline support + cache-first for static assets
 
-const CACHE_NAME = 'rukub-v1';
+const CACHE_NAME = 'rukub-v2';
 const STATIC_ASSETS = [
   '/',
   '/discover',
