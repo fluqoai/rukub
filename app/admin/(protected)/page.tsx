@@ -15,25 +15,27 @@ import {
   Truck,
 } from 'lucide-react';
 import { useMemo } from 'react';
-import { useOrdersStore, type Order } from '@/lib/orders-store';
+import { useAdminOrdersView } from '@/lib/hooks/useAdminOrdersView';
+type Order = ReturnType<typeof useAdminOrdersView>['orders'][number];
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { formatSAR, cn } from '@/lib/utils';
 
 export default function AdminDashboardPage() {
-  const orders = useOrdersStore((s) => s.orders);
+  const { orders, loading, error, refetch } = useAdminOrdersView();
 
   const stats = useMemo(() => {
     const total = orders.length;
-    const revenue = orders.reduce((acc, o) => acc + o.total, 0);
-    const aov = total > 0 ? revenue / total : 0;
+    const completed = orders.filter(o => o.status === 'delivered');
+    const revenue = completed.reduce((acc, o) => acc + o.total, 0);
+    const aov = completed.length > 0 ? revenue / completed.length : 0;
     const confirmed = orders.filter((o) => o.status === 'confirmed').length;
-    const pending = orders.filter((o) => o.status === 'pending_cj_sync').length;
-    const manualFollowup = orders.filter((o) => o.status === 'manual_followup').length;
+    const pending = orders.filter((o) => o.status === 'pending').length;
+    const manualFollowup = orders.filter((o) => !!o.cj_error).length;
     const cancelled = orders.filter((o) => o.status === 'cancelled').length;
 
     // Top products
     const productCount: Record<string, { name: string; count: number; revenue: number }> = {};
-    orders.forEach((o) => {
+    completed.forEach((o) => {
       o.items.forEach((it) => {
         if (!productCount[it.productId]) {
           productCount[it.productId] = { name: it.shortName, count: 0, revenue: 0 };
@@ -50,7 +52,7 @@ export default function AdminDashboardPage() {
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 86400000;
     const last7Days = orders.filter((o) => new Date(o.createdAt).getTime() > sevenDaysAgo);
-    const revenue7d = last7Days.reduce((acc, o) => acc + o.total, 0);
+    const revenue7d = last7Days.filter(o => o.status === 'delivered').reduce((acc, o) => acc + o.total, 0);
 
     return {
       total,
@@ -70,18 +72,20 @@ export default function AdminDashboardPage() {
     <>
       <AdminHeader
         title="لوحة التحكم"
-        subtitle="نظرة شاملة على أداء المتجر"
+        subtitle="بيانات الخادم · أحدث 1000 طلب · القيم المالية للطلبات المسلّمة وليست إثبات تحصيل"
+        onRefresh={refetch}
       />
 
       <div className="p-6">
+        {loading && <p role="status">جارٍ تحديث البيانات…</p>}
+        {error && <p role="alert" className="mb-4 text-red-700">{error}</p>}
         {/* Stat cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="إجمالي الإيرادات"
+            label="قيمة الطلبات المسلّمة"
             value={formatSAR(stats.revenue)}
             sub={`آخر 7 أيام: ${formatSAR(stats.revenue7d)}`}
             Icon={DollarSign}
-            trend={{ value: 12, up: true }}
             color="sage"
           />
           <StatCard
@@ -89,7 +93,6 @@ export default function AdminDashboardPage() {
             value={stats.total.toString()}
             sub={`آخر 7 أيام: ${stats.last7Days} طلب`}
             Icon={ShoppingCart}
-            trend={{ value: 8, up: true }}
             color="ink"
           />
           <StatCard
@@ -97,7 +100,6 @@ export default function AdminDashboardPage() {
             value={formatSAR(Math.round(stats.aov))}
             sub="لكل عميل"
             Icon={TrendingUp}
-            trend={{ value: 4, up: true }}
             color="wood"
           />
           <StatCard
@@ -118,7 +120,7 @@ export default function AdminDashboardPage() {
             color="bg-sage-100 text-sage-700"
           />
           <StatusCard
-            label="بانتظار المزامنة"
+            label="بانتظار التأكيد"
             count={stats.pending}
             Icon={Clock}
             color="bg-wood-400/15 text-wood-700"
@@ -277,8 +279,11 @@ function OrderRow({ order }: { order: Order }) {
   const dateStr = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
   const statusInfo = {
     confirmed: { text: 'مؤكد', color: 'bg-sage-100 text-sage-700' },
-    pending_cj_sync: { text: 'بانتظار', color: 'bg-wood-400/15 text-wood-700' },
-    manual_followup: { text: 'متابعة', color: 'bg-orange-100 text-orange-700' },
+    pending: { text: 'بانتظار', color: 'bg-wood-400/15 text-wood-700' },
+    processing: { text: 'قيد التجهيز', color: 'bg-sage-100 text-sage-700' },
+    shipped: { text: 'تم الشحن', color: 'bg-sage-100 text-sage-700' },
+    delivered: { text: 'مسلّم', color: 'bg-sage-100 text-sage-700' },
+    refunded: { text: 'مسترد', color: 'bg-red-100 text-red-700' },
     cancelled: { text: 'ملغي', color: 'bg-red-100 text-red-700' },
   }[order.status];
 

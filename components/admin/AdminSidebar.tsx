@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -37,11 +38,15 @@ export function AdminSidebar({ admin }: SidebarProps) {
   const router = useRouter();
   const { locale } = useI18n();
   const Chevron = locale === 'ar' ? ChevronLeft : ChevronRight;
+  const [logoutError, setLogoutError] = useState('');
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    setLoggingOut(true); setLogoutError('');
     try {
-      await fetch('/api/admin/logout', { method: 'POST' });
-    } catch {}
+      const response = await fetch('/api/admin/logout', { method: 'POST' });
+      if (!response.ok) throw new Error('تعذر إكمال تسجيل الخروج. أعد المحاولة.');
+    } catch { setLogoutError('تعذر إكمال تسجيل الخروج. أعد المحاولة.'); setLoggingOut(false); return; }
     router.push('/admin/login');
     router.refresh();
   };
@@ -93,6 +98,7 @@ export function AdminSidebar({ admin }: SidebarProps) {
 
       {/* User + Logout */}
       <div className="border-t border-linen-50/10 p-3">
+        {logoutError && <p role="alert" className="mb-2 text-xs text-red-200">{logoutError}</p>}
         <div className="mb-2 hidden items-center gap-2 rounded-xl bg-linen-50/5 px-3 py-2 md:flex">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sage-500 text-xs font-semibold">
             {initial}
@@ -105,6 +111,7 @@ export function AdminSidebar({ admin }: SidebarProps) {
         <button
           type="button"
           onClick={handleLogout}
+          disabled={loggingOut}
           aria-label="تسجيل الخروج"
           className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-linen-200/80 transition-colors hover:bg-linen-50/5 hover:text-linen-50"
         >

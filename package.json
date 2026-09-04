@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test scripts/test-catalog.cjs"
+    "test": "node --test scripts/test-catalog.cjs scripts/test-admin-operations.cjs"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.73.0",

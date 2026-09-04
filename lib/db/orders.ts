@@ -142,7 +142,7 @@ export async function listOrders(opts: {
 
   let query = supabase
     .from('orders')
-    .select('*')
+    .select('*,items:order_items(*)')
     .order('placed_at', { ascending: false });
 
   if (opts.status && opts.status !== 'all') {
@@ -172,7 +172,7 @@ export async function listOrders(opts: {
  */
 export async function updateOrderStatus(
   orderId: string,
-  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded',
+  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded' | undefined,
   extras?: {
     trackingNumber?: string;
     cjOrderId?: string;
@@ -182,7 +182,8 @@ export async function updateOrderStatus(
 ) {
   const supabase = createAdminSupabase();
 
-  const updates: Partial<OrderRow> = { status };
+  const updates: Partial<OrderRow> = {};
+  if (status !== undefined) updates.status = status;
   if (extras?.trackingNumber !== undefined) updates.tracking_number = extras.trackingNumber;
   if (extras?.cjOrderId !== undefined) updates.cj_order_id = extras.cjOrderId;
   if (extras?.cjError !== undefined) updates.cj_error = extras.cjError;

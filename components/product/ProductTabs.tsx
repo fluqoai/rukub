@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { type Product } from '@/lib/products';
+import { type PublicProduct as Product } from '@/lib/public-products';
 import { cn } from '@/lib/utils';
 
 type ProductTabsProps = {
@@ -28,13 +28,14 @@ export function ProductTabs({ product }: ProductTabsProps) {
   const [active, setActive] = useState<typeof tabs[number]['key']>('description');
 
   return (
-    <div className="mt-16">
+    <div id="product-details" className="mt-12 scroll-mt-24 rounded-3xl border border-sage-500/15 bg-white p-4 md:p-8">
       {/* Tab bar */}
       <div className="flex items-center gap-1 border-b border-sage-500/10">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
+            aria-pressed={active === tab.key}
             onClick={() => setActive(tab.key)}
             className={cn(
               'relative px-4 py-3 text-sm font-medium transition-colors',
@@ -57,7 +58,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
       <AnimatePresence mode="wait">
         <motion.div
           key={active}
-          initial={{ opacity: 0, y: 8 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.25 }}
@@ -67,7 +68,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
             <div className="grid gap-8 md:grid-cols-2">
               <div>
                 <h3 className="text-lg font-semibold text-ink-900">عن هذا المنتج</h3>
-                <p className="mt-4 leading-relaxed text-ink-700">
+                <p className="mt-4 whitespace-pre-line leading-8 text-ink-700" dir="auto">
                   {product.description}
                 </p>
                 {(product as any).usage && <div className="mt-5"><h4 className="font-medium">طريقة الاستخدام</h4><p className="mt-2 whitespace-pre-line text-sm leading-7">{(product as any).usage}</p></div>}

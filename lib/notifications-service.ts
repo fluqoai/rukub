@@ -5,6 +5,8 @@ import 'server-only';
 import { sendOrderEmail } from './email-client';
 import type { Order } from './orders-store';
 import { defaultPreferences, type NotificationTrigger } from './notifications-types';
+import { createAdminSupabase } from './supabase/client';
+import { randomUUID } from 'node:crypto';
 
 const TRIGGER_MAP: Record<string, NotificationTrigger> = {
   confirmed: 'order_confirmed',
@@ -36,9 +38,13 @@ export async function sendOrderNotification(
 ): Promise<NotificationResult> {
   const { order, trigger, customPreferences } = params;
 
-  const emailEnabled = customPreferences?.email ?? defaultPreferences.email[trigger];
+  const db = createAdminSupabase();
+  const prefs = await (db.from('settings') as any).select('value').eq('key','notifications:email').maybeSingle();
+  if (prefs.error) return { email: { sent:false, error:'تعذر قراءة تفضيلات البريد؛ لم تُرسل الرسالة.' } };
+  const configured = prefs.data?.value?.[trigger];
+  const emailEnabled = customPreferences?.email ?? (typeof configured === 'boolean' ? configured : defaultPreferences.email[trigger]);
 
-  const result: NotificationResult = { email: null };
+  const result: NotificationResult = { email: emailEnabled ? null : {sent:false,error:'إشعار البريد هذا معطّل في التفضيلات.'} };
 
   const itemsForTemplate = order.items.map((it) => ({
     name: it.variantLabel ? `${it.shortName} — ${it.variantLabel}` : it.shortName,
@@ -65,6 +71,9 @@ export async function sendOrderNotification(
 
   // Email
   if (emailEnabled && order.shipping.email) {
+    const logId = randomUUID();
+    const logged = await (db.from('notifications') as any).insert({id:logId,order_id:order.id,channel:'email',trigger,recipient:order.shipping.email,subject:null,body:'',status:'pending',provider:'resend',error:null});
+    if (logged.error) return { email:{sent:false,error:'تعذر تسجيل محاولة البريد؛ لم تُرسل الرسالة.'} };
     const emailResult = await sendOrderEmail(trigger, {
       ...commonCtx,
       to: order.shipping.email,
@@ -74,6 +83,8 @@ export async function sendOrderNotification(
       id: emailResult.id,
       error: emailResult.error,
     };
+    const saved = await (db.from('notifications') as any).update({status:emailResult.status,provider:emailResult.provider,error:emailResult.error || null}).eq('id',logId);
+    if (saved.error) console.error('[notifications] Could not update delivery attempt status');
   }
 
   return result;

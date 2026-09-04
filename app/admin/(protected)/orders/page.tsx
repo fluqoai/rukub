@@ -116,9 +116,11 @@ export default function AdminOrdersPage() {
               { key: 'all', label: 'الكل' },
               { key: 'pending', label: 'بانتظار' },
               { key: 'confirmed', label: 'مؤكدة' },
+              { key: 'processing', label: 'قيد التجهيز' },
               { key: 'shipped', label: 'تم الشحن' },
               { key: 'delivered', label: 'مسلّمة' },
               { key: 'cancelled', label: 'ملغية' },
+              { key: 'refunded', label: 'مستردة' },
             ] as const).map((f) => (
               <button
                 key={f.key}

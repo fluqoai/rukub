@@ -106,6 +106,8 @@ export default function AdminOrderDetailPage({
 
   const [editingStatus, setEditingStatus] = useState<DbStatus | null>(null);
   const [saving, setSaving] = useState(false);
+  const [operationError, setOperationError] = useState('');
+  const [operationNotice, setOperationNotice] = useState('');
   const [trackingInput, setTrackingInput] = useState('');
   const [sendingNotif, setSendingNotif] = useState(false);
   const [lastNotif, setLastNotif] = useState<{ trigger: NotificationTrigger; email?: any } | null>(null);
@@ -221,31 +223,35 @@ export default function AdminOrderDetailPage({
   };
 
   const handleStatusChange = async (newStatus: DbStatus) => {
+    if (!confirm('تأكيد تغيير حالة الطلب؟ قد يُرسل تحديث بالبريد للعميل. تسجيل الاسترداد هنا لا يعيد المبلغ عبر بوابة الدفع.')) return;
+    setOperationError(''); setOperationNotice('');
     setSaving(true);
     setEditingStatus(null);
     const oldStatus = order.status;
     try {
       await updateDbOrder(order.id, { status: newStatus });
+      setOperationNotice('تم حفظ حالة الطلب.');
       await refetch();
-      if (oldStatus !== newStatus) {
+      if (oldStatus !== newStatus && !['refunded','processing','pending'].includes(newStatus)) {
         const trigger = statusToTrigger[newStatus] ?? 'order_confirmed';
         await sendNotification(trigger);
       }
     } catch (e) {
-      console.error('Status change failed:', e);
+      setOperationError(e instanceof Error ? e.message : 'تعذر حفظ الحالة');
     } finally {
       setSaving(false);
     }
   };
 
   const handleSaveTracking = async () => {
+    setOperationError(''); setOperationNotice('');
     setSaving(true);
     try {
-      await updateDbOrder(order.id, { trackingNumber: trackingInput });
+      await updateDbOrder(order.id, { trackingNumber: trackingInput.trim() });
+      setOperationNotice('تم حفظ رقم التتبع. حفظ الرقم لا يغيّر حالة الطلب ولا يرسل بريدًا؛ غيّر الحالة إلى تم الشحن عندما تُشحن البضاعة.');
       await refetch();
-      await sendNotification('order_shipped');
     } catch (e) {
-      console.error('Tracking save failed:', e);
+      setOperationError(e instanceof Error ? e.message : 'تعذر حفظ التتبع');
     } finally {
       setSaving(false);
     }
@@ -256,10 +262,12 @@ export default function AdminOrderDetailPage({
       <AdminHeader
         title={`الطلب ${order.id}`}
         subtitle={`${dateStr} · ${timeStr}`}
-        onRefresh={() => router.refresh()}
+        onRefresh={refetch}
       />
 
       <div className="p-6">
+        {operationError && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">{operationError}</p>}
+        {operationNotice && <p role="status" className="mb-4 rounded-xl bg-sage-50 p-4 text-sm text-sage-700">{operationNotice}</p>}
         {/* Back link */}
         <Link
           href="/admin/orders"
@@ -419,11 +427,11 @@ export default function AdminOrderDetailPage({
                   <button
                     type="button"
                     onClick={handleSaveTracking}
-                    disabled={sendingNotif}
+                    disabled={saving || sendingNotif}
                     className="inline-flex items-center gap-1.5 rounded-full bg-sage-500 px-3 py-2 text-xs font-medium text-linen-50 transition-colors hover:bg-sage-600 disabled:opacity-60"
                   >
                     <Save className="h-3.5 w-3.5" />
-                    {sendingNotif ? 'جاري الإرسال...' : 'حفظ + إشعار'}
+                    {saving ? 'جارٍ الحفظ…' : 'حفظ رقم التتبع'}
                   </button>
                 </div>
 

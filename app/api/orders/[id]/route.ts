@@ -44,11 +44,17 @@ export async function PATCH(
     const { status, trackingNumber, cjOrderId, cjError, paymentStatus } = body;
 
     const allowedStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
-    if (!status || !allowedStatuses.includes(status)) {
+    if ((status !== undefined && !allowedStatuses.includes(status)) || !Object.keys(body).some(k => ['status','trackingNumber','cjOrderId','cjError','paymentStatus'].includes(k))) {
       return NextResponse.json(
-        { success: false, error: 'status is required' },
+        { success: false, error: 'اختر حالة صحيحة أو أدخل بيانات التتبع.' },
         { status: 400 }
       );
+    }
+
+    const previous = await getOrder(params.id);
+    if (!previous) return NextResponse.json({ success: false, error: 'الطلب غير موجود' }, { status: 404 });
+    for (const value of [trackingNumber, cjOrderId, cjError, paymentStatus]) {
+      if (value !== undefined && (typeof value !== 'string' || value.length > 500)) return NextResponse.json({ success: false, error: 'بيانات التحديث غير صحيحة' }, { status: 400 });
     }
 
     const order = await updateOrderStatus(params.id, status, {

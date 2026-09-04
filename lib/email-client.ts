@@ -15,17 +15,12 @@ export const isEmailConfigured = (): boolean => !!RESEND_API_KEY;
 
 export async function sendEmail(msg: EmailMessage): Promise<EmailSendResult> {
   if (!RESEND_API_KEY) {
-    // Mock mode — log to console
-    console.log('[EMAIL MOCK]', {
-      to: msg.to,
-      subject: msg.subject,
-      preview: msg.text.slice(0, 100),
-    });
     return {
-      id: `mock_email_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      status: 'sent',
+      id: '',
+      status: 'failed',
       provider: 'mock',
       to: msg.to,
+      error: 'خدمة البريد غير مهيأة؛ لم تُرسل الرسالة.',
     };
   }
 

@@ -95,6 +95,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    const permitted: Record<string,string[]> = {order_created:['pending'],order_confirmed:['confirmed','processing'],order_shipped:['shipped'],order_delivered:['delivered'],order_cancelled:['cancelled']};
+    if (!permitted[body.trigger].includes(row.status)) return NextResponse.json({success:false,error:'نوع الإشعار لا يطابق حالة الطلب الحالية.'},{status:409});
 
     // 4) Dispatch
     const localOrder = toLocalOrder(row);

@@ -61,7 +61,7 @@ function mapDbToPublic(row: any): PublicProduct {
     'تحديثات الطلب تصل عبر البريد',
   ];
   const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {};
-  const storedFeatures = Array.isArray(metadata.features) ? metadata.features.filter((item: unknown) => typeof item === 'string').slice(0, 3) : [];
+  const storedFeatures = Array.isArray(metadata.features) ? metadata.features.filter((item: unknown) => typeof item === 'string' && item.trim()).slice(0, 12) : [];
   const features = storedFeatures.length ? storedFeatures as [string, string, string] : defaultFeatures;
   const imageUrls = Array.isArray(row.images) ? row.images.filter((image: unknown) => typeof image === 'string' && image.startsWith('https://')) : [];
   return {

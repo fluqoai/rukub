@@ -183,6 +183,11 @@ export default function AdminProductsPage() {
 
   const save = async (patch: Prefill = {}): Promise<boolean> => {
     if (saving || cjLoading || enhancing) return false;
+    if (reviewOpen && !patch.metadata?.ai_generation_id) {
+      setEditorTab('content');
+      setCjError('مسودة التعريب لم تُعتمد بعد. اضغط «اعتماد التعريب وحفظ المنتج» لحفظ النص العربي الذي تراجعه.');
+      return false;
+    }
     const next = { ...form, ...patch, images: (patch.images ?? form.images ?? []).map(url => url.trim()).filter(Boolean) };
     setForm(next);
     const validation = productFormError(next);

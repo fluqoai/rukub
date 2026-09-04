@@ -3,11 +3,11 @@
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { useMemo } from 'react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
-import { useOrdersStore } from '@/lib/orders-store';
+import { useAdminOrdersView } from '@/lib/hooks/useAdminOrdersView';
 import { formatSAR, cn } from '@/lib/utils';
 
 export default function AdminAnalyticsPage() {
-  const orders = useOrdersStore((s) => s.orders);
+  const { orders, loading, error, refetch } = useAdminOrdersView();
 
   const last7Days = useMemo(() => {
     const days: Array<{ date: string; label: string; revenue: number; orders: number }> = [];
@@ -15,7 +15,7 @@ export default function AdminAnalyticsPage() {
       const d = new Date(Date.now() - i * 86400000);
       const dateStr = d.toISOString().split('T')[0];
       const dayOrders = orders.filter(
-        (o) => o.createdAt.split('T')[0] === dateStr && o.status === 'confirmed'
+        (o) => o.createdAt.split('T')[0] === dateStr && o.status === 'delivered'
       );
       const revenue = dayOrders.reduce((acc, o) => acc + o.total, 0);
       days.push({
@@ -33,13 +33,15 @@ export default function AdminAnalyticsPage() {
 
   return (
     <>
-      <AdminHeader title="التحليلات" subtitle="أداء آخر 7 أيام" />
+      <AdminHeader title="التحليلات" subtitle="آخر 7 أيام حسب تاريخ الطلب · أحدث 1000 طلب من الخادم" onRefresh={refetch} />
 
       <div className="p-6">
+        {loading && <p role="status">جارٍ تحميل التحليلات…</p>}
+        {error && <p role="alert" className="mb-4 text-red-700">{error}</p>}
         <div className="rounded-3xl border border-sage-500/10 bg-linen-50 p-6">
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <span className="eyebrow">الإيرادات</span>
+              <span className="eyebrow">قيمة الطلبات المسلّمة — ليست إثبات تحصيل</span>
               <h2 className="mt-2 text-2xl font-semibold text-ink-900">
                 {formatSAR(totalRevenue)}
               </h2>
@@ -47,7 +49,7 @@ export default function AdminAnalyticsPage() {
             </div>
             <div className="inline-flex items-center gap-1.5 rounded-full bg-sage-50 px-3 py-1.5 text-xs font-medium text-sage-700">
               <TrendingUp className="h-3.5 w-3.5" />
-              +12%
+              بيانات فعلية
             </div>
           </div>
 
@@ -57,7 +59,7 @@ export default function AdminAnalyticsPage() {
               const height = (d.revenue / maxRevenue) * 100;
               const isToday = i === last7Days.length - 1;
               return (
-                <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
+                <div key={d.date} title={`${d.label}: ${formatSAR(d.revenue)}`} className="flex h-full flex-1 flex-col items-center gap-1">
                   <div className="relative w-full flex-1">
                     <div
                       className={cn(
@@ -75,9 +77,9 @@ export default function AdminAnalyticsPage() {
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <MetricCard label="معدل التحويل (تقديري)" value="2.4%" sub="+" trend="up" />
-          <MetricCard label="متطلب COD" value="62%" sub="من الطلبات المؤكدة" trend="up" />
-          <MetricCard label="زمن التوصيل" value="3.2 يوم" sub="متوسط" trend="down" />
+          <MetricCard label="عدد الطلبات" value={String(orders.length)} sub="أحدث الطلبات المحملة" trend="up" />
+          <MetricCard label="طلبات الدفع عند الاستلام" value={String(orders.filter(o => o.payment_method === 'cod').length)} sub="عدد فعلي" trend="up" />
+          <MetricCard label="الطلبات الملغاة أو المستردة" value={String(orders.filter(o => ['cancelled','refunded'].includes(o.status)).length)} sub="عدد فعلي" trend="down" />
         </div>
 
         {orders.length === 0 && (

@@ -24,7 +24,7 @@ export function arabicProductPatch(form: Editable, generation: { id: string; sou
   const labels = new Map(reviewed.variants.map(v => [v.vid, v.labelAr]));
   return {
     name: reviewed.name, name_ar: reviewed.name, short_name: reviewed.short_name,
-    tagline: reviewed.tagline, description: reviewed.description,
+    tagline: reviewed.tagline.trim() || reviewed.short_name, description: reviewed.description.trim() || reviewed.name,
     ...(form.metadata?.variant_schema === 1 ? { variants: variants.map(v => ({ ...v, labelAr: labels.get(v.vid)! })) } : {}),
     metadata: { ...form.metadata, source_name: generation.source.name, source_description: generation.source.description,
       features: reviewed.features, specifications: reviewed.specifications, usage: reviewed.usage,

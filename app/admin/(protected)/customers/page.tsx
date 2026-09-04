@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { Users, Phone, Mail, ShoppingBag } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
-import { useOrdersStore } from '@/lib/orders-store';
+import { useAdminOrdersView } from '@/lib/hooks/useAdminOrdersView';
 import { formatSAR } from '@/lib/utils';
 
 type Customer = {
@@ -17,7 +17,7 @@ type Customer = {
 };
 
 export default function AdminCustomersPage() {
-  const orders = useOrdersStore((s) => s.orders);
+  const { orders, loading, error, refetch } = useAdminOrdersView();
 
   const customers = useMemo<Customer[]>(() => {
     const map = new Map<string, Customer>();
@@ -25,7 +25,7 @@ export default function AdminCustomersPage() {
       const existing = map.get(o.shipping.phone);
       if (existing) {
         existing.orderCount += 1;
-        existing.totalSpent += o.total;
+        existing.totalSpent += o.status === 'delivered' ? o.total : 0;
         if (new Date(o.createdAt) > new Date(existing.lastOrder)) {
           existing.lastOrder = o.createdAt;
           existing.name = o.shipping.fullName;
@@ -37,7 +37,7 @@ export default function AdminCustomersPage() {
           name: o.shipping.fullName,
           email: o.shipping.email,
           orderCount: 1,
-          totalSpent: o.total,
+          totalSpent: o.status === 'delivered' ? o.total : 0,
           city: o.shipping.city,
           lastOrder: o.createdAt,
         });
@@ -48,9 +48,11 @@ export default function AdminCustomersPage() {
 
   return (
     <>
-      <AdminHeader title="العملاء" subtitle={`${customers.length} عميل فريد`} />
+      <AdminHeader title="العملاء" subtitle={`${customers.length} عميل من أحدث 1000 طلب · الإنفاق للطلبات المسلّمة`} onRefresh={refetch} />
 
       <div className="p-6">
+        {loading && <p role="status">جارٍ تحميل العملاء…</p>}
+        {error && <p role="alert" className="mb-4 text-red-700">{error}</p>}
         {customers.length === 0 ? (
           <div className="rounded-3xl border border-sage-500/10 bg-linen-50 p-12 text-center">
             <Users className="mx-auto h-10 w-10 text-ink-300" strokeWidth={1.25} />

@@ -83,6 +83,11 @@ export function ProductInfo({ product, variantId, onVariantChange }: ProductInfo
         <p className="mt-3 text-base leading-relaxed text-ink-500">
           {product.tagline}
         </p>
+        <div className="mt-5 rounded-2xl border border-sage-500/15 bg-white p-5">
+          <h2 className="text-sm font-semibold text-ink-900">عن المنتج</h2>
+          <p className="mt-2 whitespace-pre-line text-sm leading-8 text-ink-700" dir="auto">{product.description}</p>
+          <a href="#product-details" className="mt-3 inline-block text-xs font-medium text-sage-700 underline">المميزات والمواصفات وطريقة الاستخدام</a>
+        </div>
       </div>
 
       {/* Price */}
