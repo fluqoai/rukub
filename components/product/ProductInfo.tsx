@@ -7,22 +7,26 @@ import {
   Banknote,
   RotateCcw,
 } from 'lucide-react';
-import { type Product } from '@/lib/products';
+import type { PublicProduct } from '@/lib/public-products';
 import { useCartStore } from '@/lib/cart-store';
 import { QuantityStepper } from '@/components/ui/QuantityStepper';
 import { Toast } from '@/components/ui/Toast';
 import { formatSAR } from '@/lib/utils';
 
 type ProductInfoProps = {
-  product: Product;
+  product: PublicProduct;
+  variantId?: string;
+  onVariantChange?: (vid: string) => void;
 };
 
-export function ProductInfo({ product }: ProductInfoProps) {
+export function ProductInfo({ product, variantId, onVariantChange }: ProductInfoProps) {
   const [qty, setQty] = useState(1);
   const [toast, setToast] = useState<string | null>(null);
   const addItem = useCartStore((s) => s.addItem);
 
   const handleAdd = () => {
+    if (product.requiresVariant && !variantId) return;
+    const variant = product.variants?.find(v => v.vid === variantId);
     addItem(
       {
         productId: product.id,
@@ -31,6 +35,9 @@ export function ProductInfo({ product }: ProductInfoProps) {
         shortName: product.shortName,
         price: product.price,
         audience: product.audience,
+        variantId: variant?.vid,
+        variantLabel: variant?.labelAr,
+        imageUrl: product.imageUrl || undefined,
         iconName: (product as any).iconName ?? (product as any).icon?.displayName ?? 'Package',
       },
       qty
@@ -96,12 +103,19 @@ export function ProductInfo({ product }: ProductInfoProps) {
       </div>
 
       {/* Quantity + Add */}
+      {product.requiresVariant && <label className="block text-sm font-medium text-ink-900">اختر اللون / المقاس / النوع
+        <select aria-label="اختر النسخة" value={variantId || ''} onChange={e => { setQty(1); onVariantChange?.(e.target.value); }} className="mt-2 w-full rounded-2xl border border-sage-500/25 bg-white p-3 text-sm">
+          <option value="">حدد الخيار المطلوب</option>
+          {product.variants?.map(v => <option key={v.vid} value={v.vid} disabled={v.stock === 0}>{v.labelAr} — {formatSAR(v.priceSAR)}{v.stock === 0 ? ' — غير متوفر' : ''}</option>)}
+        </select><span className="mt-2 block text-xs font-normal text-ink-500">كل خيار يطابق نسخة أصلية محددة. يتغير السعر والصورة حسب اختيارك، ويُعاد التحقق عند الطلب.</span>
+      </label>}
       <div className="flex items-center gap-3">
-        <QuantityStepper value={qty} onChange={setQty} />
+        <QuantityStepper value={qty} onChange={setQty} max={Math.min(10, product.variants?.find(v => v.vid === variantId)?.stock || 10)} />
         <button
           type="button"
           onClick={handleAdd}
-          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-sage-500 px-5 py-3 text-sm font-medium text-linen-50 transition-colors hover:bg-sage-600"
+          disabled={!!product.requiresVariant && (!variantId || product.variants?.find(v => v.vid === variantId)?.stock === 0)}
+          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-sage-500 px-5 py-3 text-sm font-medium text-linen-50 transition-colors hover:bg-sage-600 disabled:opacity-40"
         >
           <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
           <span>أضف للسلة — {formatSAR(product.price * qty)}</span>

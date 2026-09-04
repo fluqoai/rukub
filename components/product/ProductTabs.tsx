@@ -16,6 +16,7 @@ const tabs = [
 ] as const;
 
 const specsData = (product: Product) => [
+  ...((product as any).specifications || []),
   { label: 'الاستخدام', value: product.audience === 'women' ? 'ترتيب وأناقة' : product.audience === 'men' ? 'تقنية واستعداد' : 'العناية اليومية' },
   { label: 'التوصيل', value: (product as any).deliveryMaxDays ? `${(product as any).deliveryMinDays ?? (product as any).deliveryMaxDays}–${(product as any).deliveryMaxDays} يوم عمل تقريباً` : 'يُحدّث بعد تأكيد الطلب' },
   { label: 'وجهة الشحن', value: 'المملكة العربية السعودية' },
@@ -69,6 +70,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
                 <p className="mt-4 leading-relaxed text-ink-700">
                   {product.description}
                 </p>
+                {(product as any).usage && <div className="mt-5"><h4 className="font-medium">طريقة الاستخدام</h4><p className="mt-2 whitespace-pre-line text-sm leading-7">{(product as any).usage}</p></div>}
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-ink-900">المميزات</h3>

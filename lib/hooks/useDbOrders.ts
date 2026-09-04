@@ -14,6 +14,7 @@ export type OrderItem = {
   price: number;
   subtotal: number;
   variant?: string | null;
+  metadata?: { variant_id?: string; image?: string; supplier_items?: Array<{ pid: string; vid: string; sku: string; name: string; quantity: number }> };
 };
 
 export type Order = {
@@ -44,6 +45,8 @@ export type CreateOrderInput = {
   items: Array<{
     productId: string;
     quantity: number;
+    variantId?: string;
+    expectedPrice: number;
   }>;
   shipping: {
     fullName: string;

@@ -20,6 +20,7 @@ const CJ_MIN_REQUEST_INTERVAL_MS = 1_050;
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
 let lastRequestAt = 0;
+let requestQueue: Promise<void> = Promise.resolve();
 
 const asNumber = (value: unknown, fallback = 0): number => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -123,9 +124,13 @@ function normalizeProduct(raw: any): CJProduct {
 }
 
 async function throttleCJ(): Promise<void> {
-  const wait = CJ_MIN_REQUEST_INTERVAL_MS - (Date.now() - lastRequestAt);
-  if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-  lastRequestAt = Date.now();
+  const next = requestQueue.then(async () => {
+    const wait = CJ_MIN_REQUEST_INTERVAL_MS - (Date.now() - lastRequestAt);
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    lastRequestAt = Date.now();
+  });
+  requestQueue = next.catch(() => {});
+  await next;
 }
 
 async function getAccessToken(): Promise<string> {
@@ -136,6 +141,7 @@ async function getAccessToken(): Promise<string> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ apiKey: CJ_API_KEY }),
+    signal: AbortSignal.timeout(15000),
     cache: 'no-store',
   });
   const json: CJAuthResponse = await res.json();
@@ -158,6 +164,7 @@ async function cjFetch<T>(
   const url = new URL(`${CJ_BASE_URL}${path}`);
   Object.entries(options.params ?? {}).forEach(([key, value]) => url.searchParams.set(key, String(value)));
   const res = await fetch(url.toString(), {
+    signal: AbortSignal.timeout(15000),
     method: options.method ?? 'GET',
     headers: {
       'CJ-Access-Token': token,
@@ -238,10 +245,14 @@ export async function calculateFreight(
   endCountryCode = 'SA',
   quantity = 1
 ): Promise<CJFreightQuote[]> {
+  return calculateFreightForItems([{ vid, quantity }], startCountryCode, endCountryCode);
+}
+
+export async function calculateFreightForItems(products: Array<{ vid: string; quantity: number }>, startCountryCode: string, endCountryCode = 'SA'): Promise<CJFreightQuote[]> {
   if (!CJ_API_KEY) return [];
   const raw = await cjFetch<any[]>('/logistic/freightCalculate', {
     method: 'POST',
-    body: { startCountryCode, endCountryCode, products: [{ quantity, vid }] },
+    body: { startCountryCode, endCountryCode, products },
   });
   return (raw ?? []).map((quote: any) => {
     const delivery = parseDeliveryRange(quote?.logisticAging);
@@ -258,6 +269,44 @@ export async function calculateFreight(
       currency: 'USD' as const,
     };
   }).filter((quote) => quote.priceUSD > 0);
+}
+
+export async function getVariantLive(vid: string) {
+  if (!CJ_API_KEY) throw new Error('خدمة التحقق من المورد غير متاحة');
+  const raw = await cjFetch<any>('/product/variant/queryByVid', { params: { vid, features: 'enable_inventory' } });
+  if (!raw?.vid || !raw?.pid) throw new Error('النسخة غير موجودة لدى المورد');
+  const variant = normalizeVariant(raw);
+  if (!variant.inventories?.length) {
+    const stock = await cjFetch<any[]>('/product/stock/queryByVid', { params: { vid } });
+    variant.inventories = Array.isArray(stock) ? stock.map(normalizeInventory) : [];
+  }
+  return { ...variant, pid: String(raw.pid) };
+}
+
+export async function quoteSupplierItems(items: Array<{ pid: string; vid: string; quantity: number }>) {
+  const combined = new Map<string, typeof items[number]>();
+  for (const item of items) {
+    if (!item.pid || !item.vid || !Number.isInteger(item.quantity) || item.quantity < 1) throw new Error('ربط المورد غير صالح');
+    const previous = combined.get(item.vid);
+    if (previous && previous.pid !== item.pid) throw new Error('ربط المورد متعارض');
+    combined.set(item.vid, { ...item, quantity: item.quantity + (previous?.quantity ?? 0) });
+  }
+  items = [...combined.values()];
+  const live: Array<typeof items[number] & { variant: Awaited<ReturnType<typeof getVariantLive>> }> = [];
+  for (const item of items) {
+    const variant = await getVariantLive(item.vid);
+    if (variant.pid !== item.pid || variant.price <= 0) throw new Error('تغير ربط النسخة بالمورد؛ راجع المنتج');
+    live.push({ ...item, variant });
+  }
+  const origins = ['SA', 'CN'].filter(origin => live.every(item =>
+    (item.variant.inventories ?? []).filter(i => i.countryCode === origin).reduce((n, i) => n + i.totalInventory, 0) >= item.quantity));
+  for (const origin of origins) {
+    const freight = (await calculateFreightForItems(items.map(({ vid, quantity }) => ({ vid, quantity })), origin))
+      .filter(q => q.deliveryMaxDays && q.deliveryMaxDays > 0)
+      .sort((a, b) => (a.priceUSD + a.taxesFeeUSD + a.serviceFeeUSD) - (b.priceUSD + b.taxesFeeUSD + b.serviceFeeUSD))[0];
+    if (freight) return { live, freight, checkedAt: new Date().toISOString() };
+  }
+  throw new Error('لا يوجد مخزون وشحن مؤكدان لهذه النسخة والكمية إلى السعودية حاليًا');
 }
 
 export async function getProductFulfillmentSnapshot(productId: string): Promise<CJProductSnapshot | null> {

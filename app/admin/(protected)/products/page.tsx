@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { formatSAR, cn } from '@/lib/utils';
+import { ProductEnhancements } from '@/components/admin/ProductEnhancements';
+import type { CatalogVariant } from '@/lib/catalog-variants';
 
 type Product = {
   id: string;
@@ -29,6 +31,7 @@ type Product = {
   brand: string | null;
   weight: number | null;
   images: string[];
+  variants: CatalogVariant[];
   free_shipping: boolean;
   estimated_delivery_days: number;
   rating: number;
@@ -61,6 +64,7 @@ const emptyForm: Prefill = {
   brand: '',
   weight: 0,
   images: [],
+  variants: [],
   free_shipping: false,
   estimated_delivery_days: 14,
   rating: 0,
@@ -70,7 +74,7 @@ const emptyForm: Prefill = {
   active: true,
 };
 
-const audienceLabel: Record<string, string> = { women: 'للنساء', men: 'للرجال', shared: 'مشترك' };
+const audienceLabel: Record<string, string> = { women: 'ترتيب وأناقة', men: 'تقنية واستعداد', shared: 'العناية اليومية' };
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -406,6 +410,7 @@ export default function AdminProductsPage() {
             )}
 
             {/* Form */}
+            <ProductEnhancements key={editing?.id || 'new'} form={form} onChange={(patch) => setForm(previous => ({ ...previous, ...patch }))} />
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="المعرّف (slug)">
@@ -417,9 +422,9 @@ export default function AdminProductsPage() {
                 <Field label="الفئة">
                   <select value={form.audience ?? 'shared'} onChange={(e) => setForm({ ...form, audience: e.target.value as any, audience_label: audienceLabel[e.target.value] })}
                     className="w-full rounded-xl border border-sage-500/20 bg-linen-50 px-3 py-2 text-sm focus:border-sage-500 focus:outline-none">
-                    <option value="women">للنساء</option>
-                    <option value="men">للرجال</option>
-                    <option value="shared">مشترك</option>
+                    <option value="women">ترتيب وأناقة</option>
+                    <option value="men">تقنية واستعداد</option>
+                    <option value="shared">العناية اليومية</option>
                   </select>
                 </Field>
               </div>

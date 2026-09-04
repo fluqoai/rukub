@@ -2,6 +2,16 @@
 import 'server-only';
 import { createAdminSupabase } from '@/lib/supabase/client';
 import type { Database } from '@/lib/supabase/types';
+import { validateVariants, catalogVariants } from '@/lib/catalog-variants';
+
+function withVariantPrices<T extends ProductCreateInput | ProductUpdateInput>(input: T): T {
+  validateVariants(input);
+  const enabled = catalogVariants(input).filter(v => v.enabled).sort((a, b) => a.priceSAR - b.priceSAR);
+  if (!enabled.length) return input;
+  const first = enabled[0];
+  return { ...input, price: first.priceSAR, cost: first.costSAR, estimated_delivery_days: Math.max(...enabled.map(v => v.deliveryMax || 0)),
+    metadata: { ...input.metadata, delivery_min_days: Math.min(...enabled.map(v => v.deliveryMin || v.deliveryMax || 0)), delivery_max_days: Math.max(...enabled.map(v => v.deliveryMax || 0)) } };
+}
 
 type ProductRow = Database['public']['Tables']['products']['Row'];
 type ProductInsert = Database['public']['Tables']['products']['Insert'];
@@ -79,6 +89,7 @@ export async function getProduct(productId: string) {
  * Create a new product.
  */
 export async function createProduct(input: ProductCreateInput): Promise<ProductRow> {
+  input = withVariantPrices(input);
   const supabase = createAdminSupabase();
   const audienceLabels = { women: 'للنساء', men: 'للرجال', shared: 'مشترك' };
   const margin = input.price > 0 ? (input.price - input.cost) / input.price : 0;
@@ -122,6 +133,11 @@ export async function createProduct(input: ProductCreateInput): Promise<ProductR
  * Update a product.
  */
 export async function updateProduct(productId: string, updates: ProductUpdateInput): Promise<ProductRow> {
+  const previous = await getProduct(productId);
+  if (!previous) throw new Error('المنتج غير موجود');
+  if ((previous.metadata as any)?.variant_schema === 1 || (updates.metadata as any)?.variant_schema === 1) {
+    updates = withVariantPrices({ ...previous, ...updates } as ProductCreateInput);
+  }
   const supabase = createAdminSupabase();
   const patch: ProductUpdate = {};
   if (updates.name !== undefined) patch.name = updates.name;

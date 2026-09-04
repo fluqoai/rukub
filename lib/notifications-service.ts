@@ -41,7 +41,7 @@ export async function sendOrderNotification(
   const result: NotificationResult = { email: null };
 
   const itemsForTemplate = order.items.map((it) => ({
-    name: it.shortName,
+    name: it.variantLabel ? `${it.shortName} — ${it.variantLabel}` : it.shortName,
     quantity: it.quantity,
     price: it.price,
   }));

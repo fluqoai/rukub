@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       subtotal: order.subtotal, shipping_cost: order.shipping_cost, total: order.total,
       shipping_full_name: order.shipping_full_name, shipping_city: order.shipping_city,
       shipping_district: order.shipping_district, placed_at: order.placed_at,
-      items: order.items,
+      items: order.items.map((i: any) => ({ id: i.id, product_name: i.product_name, product_short_name: i.product_short_name, quantity: i.quantity, price: i.price, subtotal: i.subtotal, variant: i.variant })),
     };
     return NextResponse.json({ success: true, order: safeOrder }, { headers: { 'Cache-Control': 'no-store' } });
   } catch {

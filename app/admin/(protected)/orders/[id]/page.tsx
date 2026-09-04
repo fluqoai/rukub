@@ -155,6 +155,9 @@ export default function AdminOrderDetailPage({
       name: it.product_name,
       price: Number(it.price),
       quantity: it.quantity,
+      variantId: it.metadata?.variant_id,
+      variantLabel: it.variant,
+      supplierItems: it.metadata?.supplier_items,
     })),
     shipping: {
       fullName: dbOrder.shipping_full_name,
@@ -365,9 +368,11 @@ export default function AdminOrderDetailPage({
               <h2 className="text-sm font-semibold text-ink-900">المنتجات ({order.items.length})</h2>
               <ul className="mt-4 divide-y divide-sage-500/5">
                 {order.items.map((it) => (
-                  <li key={it.productId} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                  <li key={`${it.productId}:${it.variantId || 'fixed'}`} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
                     <div className="flex-1">
                       <p className="text-sm font-medium text-ink-900">{it.shortName}</p>
+                      {it.variantLabel && <p className="mt-1 text-xs text-sage-700">{it.variantLabel}</p>}
+                      {it.supplierItems?.map((supplier) => <div key={supplier.vid} dir="ltr" className="mt-2 break-all rounded-lg bg-sage-50 p-2 text-left font-mono text-[10px] text-ink-600">PID: {supplier.pid}<br />VID: {supplier.vid}<br />SKU: {supplier.sku} · Qty: {supplier.quantity}</div>)}
                       <p className="text-[10px] text-ink-500">
                         SKU: {it.productId} · {formatSAR(it.price)} × {it.quantity}
                       </p>

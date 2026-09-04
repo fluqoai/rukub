@@ -3,6 +3,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Audience } from './products';
+import { cartLineKey } from './catalog-variants';
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from './commerce';
+export { FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from './commerce';
 
 export type CartItem = {
   productId: string;
@@ -13,6 +16,9 @@ export type CartItem = {
   quantity: number;
   audience: Audience;
   iconName: string; // lucide icon name, used for placeholder
+  variantId?: string;
+  variantLabel?: string;
+  imageUrl?: string;
 };
 
 type CartState = {
@@ -33,12 +39,13 @@ export const useCartStore = create<CartState>()(
       setHydrated: () => set({ hydrated: true }),
       addItem: (item, qty = 1) =>
         set((state) => {
-          const existing = state.items.find((i) => i.productId === item.productId);
+          qty = Number.isFinite(qty) ? Math.max(1, Math.min(10, Math.floor(qty))) : 1;
+          const existing = state.items.find((i) => cartLineKey(i) === cartLineKey(item));
           if (existing) {
             return {
               items: state.items.map((i) =>
-                i.productId === item.productId
-                  ? { ...i, quantity: i.quantity + qty }
+                cartLineKey(i) === cartLineKey(item)
+                  ? { ...i, ...item, quantity: Math.min(10, i.quantity + qty) }
                   : i
               ),
             };
@@ -47,16 +54,17 @@ export const useCartStore = create<CartState>()(
         }),
       removeItem: (productId) =>
         set((state) => ({
-          items: state.items.filter((i) => i.productId !== productId),
+          items: state.items.filter((i) => cartLineKey(i) !== productId),
         })),
       updateQuantity: (productId, qty) =>
         set((state) => {
+          if (!Number.isFinite(qty)) return state;
           if (qty <= 0) {
-            return { items: state.items.filter((i) => i.productId !== productId) };
+            return { items: state.items.filter((i) => cartLineKey(i) !== productId) };
           }
           return {
             items: state.items.map((i) =>
-              i.productId === productId ? { ...i, quantity: qty } : i
+              cartLineKey(i) === productId ? { ...i, quantity: Math.min(10, Math.floor(qty)) } : i
             ),
           };
         }),
@@ -64,6 +72,8 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: 'rukub-cart',
+      version: 1,
+      migrate: (persisted: unknown) => ({ items: Array.isArray((persisted as any)?.items) ? (persisted as any).items : [] }) as CartState,
       onRehydrateStorage: () => (state) => {
         state?.setHydrated();
       },
@@ -77,9 +87,6 @@ export const selectTotalItems = (state: CartState) =>
 
 export const selectTotalPrice = (state: CartState) =>
   state.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-
-export const FREE_SHIPPING_THRESHOLD = 199;
-export const SHIPPING_COST = 15;
 
 export const selectShipping = (state: CartState) =>
   selectTotalPrice(state) >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;

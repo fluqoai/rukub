@@ -179,8 +179,9 @@ function SuccessContent() {
                   <p className="text-ink-500 text-xs">المنتجات ({order.items.length})</p>
                   <ul className="mt-1 space-y-0.5">
                     {order.items.map((it) => (
-                      <li key={it.productId} className="text-ink-700">
+                      <li key={`${it.productId}:${it.variantId || 'fixed'}`} className="text-ink-700">
                         {it.quantity}× {it.shortName}
+                        {it.variantLabel && <small className="block">{it.variantLabel}</small>}
                       </li>
                     ))}
                   </ul>

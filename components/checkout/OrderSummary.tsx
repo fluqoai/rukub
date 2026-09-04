@@ -2,6 +2,7 @@
 
 import * as Icons from 'lucide-react';
 import Link from 'next/link';
+import { cartLineKey } from '@/lib/catalog-variants';
 import {
   useCartStore,
   selectTotalItems,
@@ -37,7 +38,7 @@ export function OrderSummary() {
               item.iconName
             ] ?? Icons.Package;
           return (
-            <li key={item.productId} className="flex items-center gap-3">
+            <li key={cartLineKey(item)} className="flex items-center gap-3">
               <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-sage-50">
                 <Icon className="h-5 w-5 text-sage-600" strokeWidth={1.25} />
                 <span className="absolute -top-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-ink-900 font-mono text-[9px] font-medium text-linen-50">
@@ -48,6 +49,7 @@ export function OrderSummary() {
                 <p className="truncate text-xs font-medium text-ink-900">
                   {item.shortName}
                 </p>
+                {item.variantLabel && <p className="text-xs text-sage-700">{item.variantLabel}</p>}
                 <p className="font-mono text-[10px] text-ink-500">
                   {formatSAR(item.price)} × {item.quantity}
                 </p>

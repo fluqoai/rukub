@@ -106,7 +106,18 @@ const cta = (href: string, text: string) => `
 </div>
 `;
 
-export function renderEmail(
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]!));
+
+export function renderEmail(template: EmailTemplate, ctx: OrderEmailContext): { subject: string; html: string; text: string } {
+  const raw = renderContent(template, ctx);
+  const safe: OrderEmailContext = { ...ctx, orderId: escapeHtml(ctx.orderId), customerName: escapeHtml(ctx.customerName),
+    items: ctx.items.map(item => ({ ...item, name: escapeHtml(item.name) })),
+    shipping: { city: escapeHtml(ctx.shipping.city), district: escapeHtml(ctx.shipping.district), phone: escapeHtml(ctx.shipping.phone) },
+    trackingNumber: ctx.trackingNumber && escapeHtml(ctx.trackingNumber), cjOrderId: ctx.cjOrderId && escapeHtml(ctx.cjOrderId) };
+  return { ...raw, html: renderContent(template, safe).html };
+}
+
+function renderContent(
   template: EmailTemplate,
   ctx: OrderEmailContext
 ): { subject: string; html: string; text: string } {
@@ -128,7 +139,7 @@ export function renderEmail(
           `,
           'تم استلام طلبك'
         ),
-        text: `مرحباً ${ctx.customerName}، تم استلام طلبك #${ctx.orderId} بقيمة ${formatSAR(ctx.total)} ريال. تتبع طلبك: ${orderUrl}`,
+        text: `مرحباً ${ctx.customerName}، تم استلام طلبك #${ctx.orderId} بقيمة ${formatSAR(ctx.total)} ريال.\n${ctx.items.map(item => `${item.quantity}× ${item.name}`).join('\n')}\nتتبع طلبك: ${orderUrl}`,
       };
 
     case 'order_confirmed':

@@ -7,12 +7,14 @@ import { randomBytes } from 'node:crypto';
 import { listOrders, createOrder, getOrder, type CreateOrderInput } from '@/lib/db/orders';
 import { sendOrderNotification } from '@/lib/notifications-service';
 import { getCurrentAdmin } from '@/lib/admin-auth-server';
-import { getPublicProduct } from '@/lib/public-products';
-import { FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from '@/lib/cart-store';
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from '@/lib/commerce';
+import { allowCheckoutRequest } from '@/lib/checkout-rate-limit';
 import type { Order, OrderStatus, PaymentMethod } from '@/lib/orders-store';
 import type { CartItem } from '@/lib/cart-store';
+import { validateCheckout, type RequestedLine } from '@/lib/checkout-validation';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
   try {
@@ -49,6 +51,9 @@ function toLocalOrder(
     quantity: it.quantity,
     audience: 'shared',
     iconName: 'Package',
+    variantId: it.metadata?.variant_id ?? undefined,
+    variantLabel: it.variant ?? undefined,
+    imageUrl: it.metadata?.image ?? undefined,
   }));
   const status: OrderStatus =
     row?.status === 'pending'
@@ -83,9 +88,10 @@ function toLocalOrder(
 }
 
 export async function POST(req: NextRequest) {
+  if (!allowCheckoutRequest(req)) return NextResponse.json({ error: 'طلبات متكررة؛ انتظر دقيقة ثم حاول مجددًا' }, { status: 429, headers: { 'Retry-After': '60' } });
   try {
     const body = (await req.json()) as {
-      items?: Array<{ productId?: string; quantity?: number }>;
+      items?: RequestedLine[];
       shipping?: CreateOrderInput['shipping'];
       paymentMethod?: string;
     };
@@ -111,20 +117,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'يرجى التحقق من بيانات الشحن' }, { status: 400 });
     }
 
-    const items = await Promise.all(body.items.map(async (item) => {
-      const product = item.productId ? await getPublicProduct(item.productId) : undefined;
-      const quantity = Number(item.quantity);
-      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
-        throw new Error('INVALID_CART');
-      }
-      return {
-        productId: product.id,
-        productName: product.name,
-        productShortName: product.shortName,
-        quantity,
-        price: product.price,
-      };
-    }));
+    let items: CreateOrderInput['items'];
+    try { items = await validateCheckout(body.items); }
+    catch (e) { return NextResponse.json({ success: false, error: e instanceof Error ? e.message : 'تعذر التحقق من المورد؛ حاول لاحقًا' }, { status: 409 }); }
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
     const input: CreateOrderInput = {
@@ -147,11 +142,10 @@ export async function POST(req: NextRequest) {
 
     const row = await createOrder(input);
 
-    // Fire-and-forget email notification dispatch.
-    // Failure here must NOT break order creation, so we don't await.
+    // Finish email dispatch before the serverless request ends; failure does not cancel the order.
     if (row) {
       // Re-fetch with items so the template can list them
-      void (async () => {
+      await (async () => {
         try {
           const full = await getOrder(row.id);
           const order = toLocalOrder(full, input);

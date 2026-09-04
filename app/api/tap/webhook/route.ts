@@ -180,6 +180,8 @@ async function fulfillConfirmedOrder(orderId: string): Promise<void> {
 
   const orderItems: CartItem[] = (items ?? []).map((it: any) => ({
     productId: it.product_id,
+    variantId: it.metadata?.variant_id,
+    variantLabel: it.variant,
     slug: it.product_id,
     name: it.product_name,
     shortName: it.product_short_name ?? it.product_name,

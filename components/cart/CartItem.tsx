@@ -2,6 +2,8 @@
 
 import { Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { cartLineKey } from '@/lib/catalog-variants';
 import * as Icons from 'lucide-react';
 import { useCartStore, type CartItem as CartItemType } from '@/lib/cart-store';
 import { QuantityStepper } from '@/components/ui/QuantityStepper';
@@ -34,7 +36,7 @@ export function CartItem({ item }: CartItemProps) {
         href={`/products/${item.slug}`}
         className={`relative flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${audienceGradients[item.audience]}`}
       >
-        <Icon className="h-9 w-9 text-sage-600" strokeWidth={1.25} />
+        {item.imageUrl ? <Image src={item.imageUrl} alt={item.variantLabel || item.name} fill sizes="80px" className="object-contain" /> : <Icon className="h-9 w-9 text-sage-600" strokeWidth={1.25} />}
       </Link>
 
       {/* Info */}
@@ -47,13 +49,14 @@ export function CartItem({ item }: CartItemProps) {
             >
               {item.name}
             </Link>
+            {item.variantLabel && <p className="mt-1 text-xs text-sage-700">{item.variantLabel}</p>}
             <p className="mt-0.5 text-[10px] uppercase tracking-wider text-ink-300">
               {{ women: 'ترتيب وأناقة', men: 'تقنية واستعداد', shared: 'العناية اليومية' }[item.audience]}
             </p>
           </div>
           <button
             type="button"
-            onClick={() => removeItem(item.productId)}
+            onClick={() => removeItem(cartLineKey(item))}
             className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-ink-300 transition-colors hover:bg-ink-900/5 hover:text-ink-700"
             aria-label="حذف من السلة"
           >
@@ -64,7 +67,8 @@ export function CartItem({ item }: CartItemProps) {
         <div className="mt-auto flex items-center justify-between pt-3">
           <QuantityStepper
             value={item.quantity}
-            onChange={(qty) => updateQuantity(item.productId, qty)}
+            max={10}
+            onChange={(qty) => updateQuantity(cartLineKey(item), qty)}
             size="sm"
           />
           <span className="font-mono text-sm font-semibold tabular-nums text-ink-900">

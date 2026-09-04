@@ -8,8 +8,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAdmin } from '@/lib/admin-auth-server';
-import { getProductFulfillmentSnapshot } from '@/lib/cj-client';
-import { calculateCatalogPricing } from '@/lib/cj-service';
+import { getProductDetails } from '@/lib/cj-client';
+import type { CatalogVariant } from '@/lib/catalog-variants';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,66 +19,51 @@ export async function GET(req: NextRequest) {
   try {
     const pid = req.nextUrl.searchParams.get('pid');
     if (!pid) return NextResponse.json({ success: false, error: 'pid مطلوب' }, { status: 400 });
-    const snapshot = await getProductFulfillmentSnapshot(pid);
-    if (!snapshot) return NextResponse.json({ success: false, error: 'المنتج غير موجود في CJ' }, { status: 404 });
-    const { product, selectedVariant, freight, inventories, checkedAt } = snapshot;
-    if (!selectedVariant) {
-      return NextResponse.json({ success: false, error: 'لا توجد نسخة قابلة للبيع بسعر واضح في CJ' }, { status: 422 });
-    }
-    const pricing = calculateCatalogPricing(selectedVariant.price, freight?.priceUSD ?? 0);
-    const localInventory = inventories
-      .filter((item) => item.countryCode === 'SA')
-      .reduce((sum, item) => sum + item.totalInventory, 0);
-    const deliveryMax = freight?.deliveryMaxDays ?? 14;
+    const product = await getProductDetails(pid);
+    if (!product) return NextResponse.json({ success: false, error: 'المنتج غير موجود في CJ' }, { status: 404 });
+    const variants: CatalogVariant[] = product.variants.map(v => ({ pid: product.id, vid: v.vid, sku: v.sku || '', name: v.name,
+      labelAr: v.name, image: v.image || null, enabled: false, priceSAR: 0, costSAR: 0, supplierPriceUSD: v.price,
+      shippingUSD: null, stock: null, origin: null, logistics: null, deliveryMin: null, deliveryMax: null, checkedAt: null }));
 
     return NextResponse.json({
       success: true,
       cjProduct: product,
-      fulfillment: { inventories, selectedVariant, freight, checkedAt },
       prefill: {
         id: `cj-${product.id.toLowerCase()}`,
         name: product.name || 'CJ Product',
         short_name: product.name.slice(0, 48),
         name_ar: null,
-        description: product.name,
+        description: product.description.replace(/<[^>]*>/g, ' ').slice(0, 6000) || product.name,
         tagline: product.name.slice(0, 90),
         audience: 'shared',
         audience_label: 'العناية اليومية',
-        price: pricing.retailPriceSAR,
-        cost: pricing.landedCostSAR,
+        price: 0,
+        cost: 0,
         badge: null,
         tier: 1,
         is_hero: false,
         cj_product_id: product.id,
         category_name: product.categoryName || null,
         brand: product.brand,
-        weight: selectedVariant.weight || product.weight || null,
+        weight: product.weight || null,
         images: product.images.slice(0, 10),
-        variants: product.variants,
-        free_shipping: product.isFreeShipping,
-        estimated_delivery_days: deliveryMax,
+        variants,
+        free_shipping: false,
+        estimated_delivery_days: 0,
         rating: 0,
         review_count: 0,
         sales_count: 0,
         metadata: {
           supplier: 'CJdropshipping',
           supplier_product_id: product.id,
-          supplier_variant_id: selectedVariant.vid,
-          supplier_sku: selectedVariant.sku,
-          supplier_price_usd: selectedVariant.price,
-          shipping_price_usd: freight?.priceUSD ?? null,
-          logistics_name: freight?.logisticsName ?? null,
-          delivery_min_days: freight?.deliveryMinDays ?? null,
-          delivery_max_days: freight?.deliveryMaxDays ?? null,
-          shipping_origin: freight?.originCountryCode ?? null,
-          local_inventory_sa: localInventory,
-          inventory_verified_at: checkedAt,
+          variant_schema: 1,
+          source_name: product.name,
+          source_description: product.description.replace(/<[^>]*>/g, ' ').slice(0, 6000),
           exchange_rate: 3.75,
-          landed_cost_sar: pricing.landedCostSAR,
           listed_num: product.listedNum,
           videos: product.videos ?? [],
         },
-        active: true,
+        active: false,
       },
     });
   } catch (err) {

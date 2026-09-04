@@ -6,6 +6,7 @@
 // and features until the admin customizes them.
 
 import 'server-only';
+import { publicVariants, type PublicVariant } from '@/lib/catalog-variants';
 import { unstable_noStore } from 'next/cache';
 import { Package, type LucideIcon } from 'lucide-react';
 import { listProducts } from '@/lib/db/products';
@@ -20,6 +21,12 @@ export type PublicProduct = Omit<StaticProduct, 'icon' | 'cost'> & {
   shippingOrigin?: string | null;
   localInventorySA?: number;
   fromDb: boolean;
+  variants?: PublicVariant[];
+  requiresVariant?: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
+  specifications?: Array<{ label: string; value: string }>;
+  usage?: string;
 };
 
 // Maps icon component display name (heuristic) to a string we send over the wire.
@@ -55,7 +62,7 @@ function mapDbToPublic(row: any): PublicProduct {
   ];
   const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata : {};
   const storedFeatures = Array.isArray(metadata.features) ? metadata.features.filter((item: unknown) => typeof item === 'string').slice(0, 3) : [];
-  const features = storedFeatures.length === 3 ? storedFeatures as [string, string, string] : defaultFeatures;
+  const features = storedFeatures.length ? storedFeatures as [string, string, string] : defaultFeatures;
   const imageUrls = Array.isArray(row.images) ? row.images.filter((image: unknown) => typeof image === 'string' && image.startsWith('https://')) : [];
   return {
     id: row.id,
@@ -79,6 +86,12 @@ function mapDbToPublic(row: any): PublicProduct {
     shippingOrigin: typeof metadata.shipping_origin === 'string' ? metadata.shipping_origin : null,
     localInventorySA: Number(metadata.local_inventory_sa) || 0,
     fromDb: true,
+    variants: publicVariants(row),
+    requiresVariant: metadata.variant_schema === 1,
+    seoTitle: metadata.seo_title,
+    seoDescription: metadata.seo_description,
+    specifications: Array.isArray(metadata.specifications) ? metadata.specifications : [],
+    usage: metadata.usage,
   };
 }
 
@@ -94,23 +107,10 @@ export async function getPublicProducts(opts: { audience?: Audience | 'all'; sea
       audience: audience as any,
       search: opts.search,
     });
-    if (rows.length > 0) return rows.map(mapDbToPublic);
-    throw new Error('Product catalog is empty');
+    return rows.map(mapDbToPublic);
   } catch (e) {
-    // Fall back to static if DB fails
-    console.error('[public-products] DB fetch failed, using static fallback:', e);
-    let fallback = staticProducts;
-    if (audience !== 'all') fallback = fallback.filter((p) => p.audience === audience);
-    if (opts.search) {
-      const q = opts.search.toLowerCase();
-      fallback = fallback.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.shortName.toLowerCase().includes(q) ||
-          p.tagline.toLowerCase().includes(q)
-      );
-    }
-    return fallback.map(mapStaticToPublic);
+    console.error('[public-products] DB fetch failed; catalog unavailable:', e);
+    return [];
   }
 }
 
@@ -122,12 +122,16 @@ export async function getPublicProduct(idOrSlug: string): Promise<PublicProduct 
   try {
     const { getProduct } = await import('@/lib/db/products');
     const row = await getProduct(idOrSlug);
-    if (row) return mapDbToPublic(row);
+    if (row) return row.active ? mapDbToPublic(row) : null;
   } catch (e) {
     console.error('[public-products] getProduct failed:', e);
   }
   // Fallback: static by id or slug
   const staticMatch = staticProducts.find((p) => p.id === idOrSlug || p.slug === idOrSlug);
-  if (staticMatch) return mapStaticToPublic(staticMatch);
+  if (staticMatch && staticMatch.id !== idOrSlug) {
+    const { getProduct } = await import('@/lib/db/products');
+    const row = await getProduct(staticMatch.id);
+    return row?.active ? mapDbToPublic(row) : null;
+  }
   return null;
 }

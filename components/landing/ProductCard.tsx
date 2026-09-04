@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { ShoppingBag, Package as PackageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { type Product } from '@/lib/products';
@@ -14,7 +15,7 @@ import { useI18n } from '@/lib/i18n';
 import { formatSAR, cn } from '@/lib/utils';
 
 type ProductCardProps = {
-  product: Product | (Omit<PublicProduct, 'icon'> & { icon?: any });
+  product: (Product & { requiresVariant?: boolean }) | (Omit<PublicProduct, 'icon'> & { icon?: any });
   index?: number;
 };
 
@@ -30,6 +31,7 @@ const categoryLabel: Record<Product['audience'], string> = {
 };
 
 export function ProductCard({ product, index = 0 }: ProductCardProps) {
+  const router = useRouter();
   const { t } = useI18n();
   // Resolve icon: prefer explicit component (static products), else use iconName lookup (DB products)
   const Icon = (product as any).icon ?? getIcon((product as any).iconName);
@@ -48,6 +50,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if ((product as PublicProduct).requiresVariant) { router.push(`/products/${product.slug}`); return; }
     addItem({
       productId: product.id,
       slug: product.slug,
@@ -55,6 +58,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
       shortName: product.shortName,
       price: product.price,
       audience: product.audience,
+      imageUrl: primaryImage,
       iconName: (product as any).iconName ?? (product as any).icon?.displayName ?? 'Package',
     });
     setToast(`تمت إضافة "${product.shortName}" للسلة`);
@@ -151,6 +155,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
         <div className="mt-4 flex items-end justify-between">
           <div className="flex items-baseline gap-2">
             <span className="font-mono text-lg font-semibold text-ink-900">
+              {product.requiresVariant && <span className="me-1 font-sans text-xs font-normal">من</span>}
               {formatSAR(product.price)}
             </span>
             {product.oldPrice && (
@@ -166,10 +171,10 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             type="button"
             onClick={handleAdd}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-sage-500 px-3 py-2 text-xs font-medium text-linen-50 transition-colors hover:bg-sage-600"
-            aria-label={t('products.add')}
+            aria-label={product.requiresVariant ? 'اختر الخيارات' : t('products.add')}
           >
             <ShoppingBag className="h-3.5 w-3.5" strokeWidth={2} />
-            <span>{t('products.add')}</span>
+            <span>{product.requiresVariant ? 'اختر الخيارات' : t('products.add')}</span>
           </button>
           <a
             href={`/products/${product.slug}`}

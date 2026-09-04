@@ -1,4 +1,5 @@
 'use client';
+import { cartLineKey } from '@/lib/catalog-variants';
 
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, ShoppingBag } from 'lucide-react';
@@ -80,7 +81,7 @@ export default function CartPage() {
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="space-y-3 lg:col-span-2">
             {items.map((item) => (
-              <CartItem key={item.productId} item={item} />
+              <CartItem key={cartLineKey(item)} item={item} />
             ))}
 
             <Link

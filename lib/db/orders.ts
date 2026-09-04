@@ -19,6 +19,7 @@ export type CreateOrderInput = {
     quantity: number;
     price: number;
     variant?: string;
+    metadata?: Record<string, unknown>;
   }>;
   shipping: {
     fullName: string;
@@ -91,7 +92,7 @@ export async function createOrder(input: CreateOrderInput) {
     price: item.price,
     subtotal: item.price * item.quantity,
     variant: item.variant ?? null,
-    metadata: {},
+    metadata: item.metadata ?? {},
   }));
 
   const { error: itemsError } = await (supabase.from('order_items') as any)

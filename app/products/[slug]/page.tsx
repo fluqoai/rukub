@@ -1,5 +1,4 @@
 import { getPublicProduct } from '@/lib/public-products';
-import { products as staticProducts } from '@/lib/products';
 import { ProductDetail } from '@/components/product/ProductDetail';
 import { ProductJsonLd, BreadcrumbJsonLd } from '@/components/seo/JsonLd';
 import type { Metadata } from 'next';
@@ -19,20 +18,20 @@ export async function generateMetadata({
   const url = `${SITE_URL}/products/${product.slug}`;
   const imageUrl = product.imageUrl ?? '/brand/rukub-hero.png';
   return {
-    title: product.name,
-    description: product.tagline,
+    title: product.seoTitle || product.name,
+    description: product.seoDescription || product.tagline,
     alternates: { canonical: `/products/${product.slug}` },
     openGraph: {
       type: 'website',
       url,
-      title: `${product.name} · ركوب`,
-      description: product.tagline,
+      title: `${product.seoTitle || product.name} · ركوب`,
+      description: product.seoDescription || product.tagline,
       images: [{ url: imageUrl, width: 1200, height: 630, alt: product.name }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${product.name} · ركوب`,
-      description: product.tagline,
+      title: `${product.seoTitle || product.name} · ركوب`,
+      description: product.seoDescription || product.tagline,
     },
   };
 }
